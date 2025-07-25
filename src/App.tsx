@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container, Typography, Box, Paper, Button, TextField, MenuItem, Select, InputLabel, FormControl, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Container, Typography, Box, Paper, Button, TextField, MenuItem, Select, InputLabel, FormControl, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent } from '@mui/material';
 import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet } from '@mui/icons-material';
 import CssBaseline from '@mui/material/CssBaseline';
 
@@ -34,6 +34,11 @@ function AppContent() {
   const [tab, setTab] = useState(0);
   const [editandoId, setEditandoId] = useState<number|null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [categorias, setCategorias] = useState<string[]>(categoriasBase);
+  const [tarjetasPersonalizadas, setTarjetasPersonalizadas] = useState<string[]>(tarjetas);
+
+  console.log('Estado actual del diálogo:', dialogOpen);
+  console.log('Cantidad de transacciones:', transacciones.length);
 
   // Cargar datos del localStorage al iniciar
   useEffect(() => {
@@ -75,8 +80,27 @@ function AppContent() {
       }]);
       alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`);
     }
-    setDescripcion(''); setMonto(''); setFecha(''); setTipo('gasto'); setEsFuturo(false); setTarjeta(''); setCategoria(''); setEditandoId(null);
+    limpiarFormulario();
     setDialogOpen(false);
+  };
+
+  const limpiarFormulario = () => {
+    setDescripcion(''); 
+    setMonto(''); 
+    setFecha(''); 
+    setTipo('gasto'); 
+    setEsFuturo(false); 
+    setTarjeta(''); 
+    setCategoria(''); 
+    setEditandoId(null);
+  };
+
+  const abrirDialogoNuevo = (tipoTransaccion: TipoTransaccion) => {
+    console.log('Abriendo diálogo para tipo:', tipoTransaccion);
+    limpiarFormulario();
+    setTipo(tipoTransaccion);
+    setDialogOpen(true);
+    console.log('Estado del diálogo después de abrir:', true);
   };
 
   const handleEliminar = (id:number) => {
@@ -85,8 +109,14 @@ function AppContent() {
   };
 
   const handleEditar = (t:Transaccion) => {
-    setDescripcion(t.descripcion); setMonto(t.monto.toString()); setFecha(t.fecha);
-    setTipo(t.tipo); setEsFuturo(t.esFuturo); setTarjeta(t.tarjeta || ''); setCategoria(t.categoria || ''); setEditandoId(t.id);
+    setDescripcion(t.descripcion); 
+    setMonto(t.monto.toString()); 
+    setFecha(t.fecha);
+    setTipo(t.tipo); 
+    setEsFuturo(t.esFuturo); 
+    setTarjeta(t.tarjeta || ''); 
+    setCategoria(t.categoria || ''); 
+    setEditandoId(t.id);
     setDialogOpen(true);
   };
 
@@ -111,6 +141,7 @@ function AppContent() {
           <Tab label="💸 Gastos" />
           <Tab label="💰 Ingresos" />
           <Tab label="🔮 Futuros" />
+          <Tab label="⚙️ Configuración" />
         </Tabs>
       </Box>
 
@@ -167,10 +198,26 @@ function AppContent() {
           </Paper>
 
           <Box display="flex" gap={2}>
-            <Button variant="contained" color="success" startIcon={<Add />} onClick={() => { setTipo('ingreso'); setDialogOpen(true); }}>
+            <Button 
+              variant="contained" 
+              color="success" 
+              startIcon={<Add />} 
+              onClick={() => {
+                console.log('Botón ingreso clickeado');
+                abrirDialogoNuevo('ingreso');
+              }}
+            >
               Agregar Ingreso
             </Button>
-            <Button variant="contained" color="error" startIcon={<Add />} onClick={() => { setTipo('gasto'); setDialogOpen(true); }}>
+            <Button 
+              variant="contained" 
+              color="error" 
+              startIcon={<Add />} 
+              onClick={() => {
+                console.log('Botón gasto clickeado');
+                abrirDialogoNuevo('gasto');
+              }}
+            >
               Agregar Gasto
             </Button>
           </Box>
@@ -243,50 +290,312 @@ function AppContent() {
         </Paper>
       )}
 
-      {/* Dialog para agregar/editar */}
-      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {editandoId ? '✏️ Editar transacción' : `➕ Nueva ${tipo === 'gasto' ? 'salida' : 'entrada'}`}
-        </DialogTitle>
-        <DialogContent>
-          <FormControl fullWidth sx={{ mb: 2, mt: 1 }}>
-            <InputLabel>Tipo</InputLabel>
-            <Select value={tipo} label="Tipo" onChange={e => setTipo(e.target.value as TipoTransaccion)}>
-              <MenuItem value="gasto">💸 Gasto</MenuItem>
-              <MenuItem value="ingreso">💰 Ingreso</MenuItem>
-            </Select>
-          </FormControl>
-          <TextField fullWidth label="Descripción" value={descripcion} onChange={e => setDescripcion(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Monto" type="number" value={monto} onChange={e => setMonto(e.target.value)} sx={{ mb: 2 }} />
-          <TextField fullWidth label="Fecha" type="date" value={fecha} onChange={e => setFecha(e.target.value)} sx={{ mb: 2 }} InputLabelProps={{ shrink: true }} />
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>¿Es futuro?</InputLabel>
-            <Select value={esFuturo ? 'sí' : 'no'} label="¿Es futuro?" onChange={e => setEsFuturo(e.target.value === 'sí')}>
-              <MenuItem value="no">No</MenuItem>
-              <MenuItem value="sí">Sí</MenuItem>
-            </Select>
-          </FormControl>
-          {esFuturo && (
+      {/* Tab de Configuración */}
+      {tab === 4 && (
+        <Box>
+          <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
+            <Typography variant="h6" gutterBottom>🏷️ Gestión de Categorías</Typography>
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                fullWidth
+                label="Nueva categoría"
+                placeholder="Ej: Educación, Entretenimiento..."
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const input = e.target as HTMLInputElement;
+                    const nuevaCategoria = input.value.trim();
+                    if (nuevaCategoria && !categorias.includes(nuevaCategoria)) {
+                      setCategorias([...categorias, nuevaCategoria]);
+                      input.value = '';
+                    }
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={(e) => {
+                  const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
+                  const nuevaCategoria = input?.value.trim();
+                  if (nuevaCategoria && !categorias.includes(nuevaCategoria)) {
+                    setCategorias([...categorias, nuevaCategoria]);
+                    input.value = '';
+                  }
+                }}
+              >
+                Agregar
+              </Button>
+            </Box>
+            <Box display="flex" flexWrap="wrap" gap={1}>
+              {categorias.map((cat) => (
+                <Box key={cat} display="flex" alignItems="center" sx={{ 
+                  bgcolor: '#f0f0f0', 
+                  px: 2, 
+                  py: 1, 
+                  borderRadius: 1,
+                  border: categoriasBase.includes(cat) ? '2px solid #1976d2' : '1px solid #ccc'
+                }}>
+                  <Typography variant="body2">{cat}</Typography>
+                  {!categoriasBase.includes(cat) && (
+                    <IconButton
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => {
+                        setCategorias(categorias.filter(c => c !== cat));
+                      }}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              ))}
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              💡 Las categorías con borde azul son predeterminadas y no se pueden eliminar
+            </Typography>
+          </Paper>
+
+          <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
+            <Typography variant="h6" gutterBottom>💳 Gestión de Tarjetas</Typography>
+            <Box display="flex" gap={2} mb={2}>
+              <TextField
+                fullWidth
+                label="Nueva tarjeta"
+                placeholder="Ej: Naranja X, Banco Nación..."
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    const input = e.target as HTMLInputElement;
+                    const nuevaTarjeta = input.value.trim();
+                    if (nuevaTarjeta && !tarjetasPersonalizadas.includes(nuevaTarjeta)) {
+                      setTarjetasPersonalizadas([...tarjetasPersonalizadas, nuevaTarjeta]);
+                      input.value = '';
+                    }
+                  }
+                }}
+              />
+              <Button
+                variant="contained"
+                onClick={(e) => {
+                  const input = e.currentTarget.parentElement?.querySelector('input') as HTMLInputElement;
+                  const nuevaTarjeta = input?.value.trim();
+                  if (nuevaTarjeta && !tarjetasPersonalizadas.includes(nuevaTarjeta)) {
+                    setTarjetasPersonalizadas([...tarjetasPersonalizadas, nuevaTarjeta]);
+                    input.value = '';
+                  }
+                }}
+              >
+                Agregar
+              </Button>
+            </Box>
+            <Box display="flex" flexWrap="wrap" gap={1}>
+              {tarjetasPersonalizadas.map((tarj) => (
+                <Box key={tarj} display="flex" alignItems="center" sx={{ 
+                  bgcolor: '#f0f0f0', 
+                  px: 2, 
+                  py: 1, 
+                  borderRadius: 1,
+                  border: tarjetas.includes(tarj) ? '2px solid #1976d2' : '1px solid #ccc'
+                }}>
+                  <Typography variant="body2">{tarj}</Typography>
+                  {!tarjetas.includes(tarj) && (
+                    <IconButton
+                      size="small"
+                      sx={{ ml: 1 }}
+                      onClick={() => {
+                        setTarjetasPersonalizadas(tarjetasPersonalizadas.filter(t => t !== tarj));
+                      }}
+                    >
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+              ))}
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+              💡 Las tarjetas con borde azul son predeterminadas y no se pueden eliminar
+            </Typography>
+          </Paper>
+
+          <Paper sx={{ p: 3, bgcolor: '#fff', color: '#222' }}>
+            <Typography variant="h6" gutterBottom>🗂️ Datos de la aplicación</Typography>
+            <Box display="flex" gap={2} flexWrap="wrap">
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() => {
+                  const confirmacion = confirm('¿Estás seguro de que quieres borrar todos los datos? Esta acción no se puede deshacer.');
+                  if (confirmacion) {
+                    setTransacciones([]);
+                    localStorage.removeItem('transacciones-gastos');
+                    alert('Todos los datos han sido eliminados');
+                  }
+                }}
+              >
+                🗑️ Borrar todos los datos
+              </Button>
+              <Button
+                variant="outlined"
+                onClick={() => {
+                  const data = {
+                    transacciones,
+                    categorias,
+                    tarjetas: tarjetasPersonalizadas
+                  };
+                  const dataStr = JSON.stringify(data, null, 2);
+                  const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                  const url = URL.createObjectURL(dataBlob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'gastos-backup.json';
+                  link.click();
+                }}
+              >
+                📥 Exportar datos
+              </Button>
+            </Box>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+              Total de transacciones: {transacciones.length}<br/>
+              Categorías personalizadas: {categorias.length - categoriasBase.length}<br/>
+              Tarjetas personalizadas: {tarjetasPersonalizadas.length - tarjetas.length}
+            </Typography>
+          </Paper>
+        </Box>
+      )}
+
+      {/* Modal personalizado en lugar de Dialog */}
+      {dialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => {
+            console.log('Fondo clickeado - cerrando');
+            setDialogOpen(false);
+            limpiarFormulario();
+          }}
+        >
+          <Paper
+            sx={{
+              p: 3,
+              maxWidth: 500,
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Typography variant="h6" gutterBottom>
+              {editandoId ? '✏️ Editar transacción' : `➕ Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
+            </Typography>
+            
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Tarjeta (opcional)</InputLabel>
-              <Select value={tarjeta} label="Tarjeta (opcional)" onChange={e => setTarjeta(e.target.value)}>
-                <MenuItem value="">Sin tarjeta</MenuItem>
-                {tarjetas.map(t => (<MenuItem key={t} value={t}>{t}</MenuItem>))}
+              <InputLabel id="tipo-label">Tipo</InputLabel>
+              <Select
+                labelId="tipo-label"
+                value={tipo}
+                label="Tipo"
+                onChange={e => setTipo(e.target.value as TipoTransaccion)}
+              >
+                <MenuItem value="gasto">💸 Gasto</MenuItem>
+                <MenuItem value="ingreso">💰 Ingreso</MenuItem>
               </Select>
             </FormControl>
-          )}
-          <TextField fullWidth label="Categoría" select value={categoria} onChange={e => setCategoria(e.target.value)} sx={{ mb: 2 }}>
-            <MenuItem value="">Sin categoría</MenuItem>
-            {categoriasBase.map(cat => (<MenuItem key={cat} value={cat}>{cat}</MenuItem>))}
-          </TextField>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" onClick={handleAgregar}>
-            {editandoId ? 'Guardar' : 'Agregar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
+            
+            <TextField 
+              fullWidth 
+              label="Descripción" 
+              value={descripcion} 
+              onChange={e => setDescripcion(e.target.value)} 
+              sx={{ mb: 2 }} 
+              autoFocus
+            />
+            
+            <TextField 
+              fullWidth 
+              label="Monto" 
+              type="number" 
+              value={monto} 
+              onChange={e => setMonto(e.target.value)} 
+              sx={{ mb: 2 }} 
+            />
+            
+            <TextField 
+              fullWidth 
+              label="Fecha" 
+              type="date" 
+              value={fecha} 
+              onChange={e => setFecha(e.target.value)} 
+              sx={{ mb: 2 }} 
+              InputLabelProps={{ shrink: true }} 
+            />
+            
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="futuro-label">¿Es futuro?</InputLabel>
+              <Select
+                labelId="futuro-label"
+                value={esFuturo ? 'si' : 'no'}
+                label="¿Es futuro?"
+                onChange={e => setEsFuturo(e.target.value === 'si')}
+              >
+                <MenuItem value="no">No</MenuItem>
+                <MenuItem value="si">Sí</MenuItem>
+              </Select>
+            </FormControl>
+            
+            {esFuturo && (
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="tarjeta-label">Tarjeta (opcional)</InputLabel>
+                <Select
+                  labelId="tarjeta-label"
+                  value={tarjeta}
+                  label="Tarjeta (opcional)"
+                  onChange={e => setTarjeta(e.target.value)}
+                >
+                  <MenuItem value="">Sin tarjeta</MenuItem>
+                  {tarjetasPersonalizadas.map(t => (<MenuItem key={t} value={t}>{t}</MenuItem>))}
+                </Select>
+              </FormControl>
+            )}
+            
+            <FormControl fullWidth sx={{ mb: 3 }}>
+              <InputLabel id="categoria-label">Categoría</InputLabel>
+              <Select
+                labelId="categoria-label"
+                value={categoria}
+                label="Categoría"
+                onChange={e => setCategoria(e.target.value)}
+              >
+                <MenuItem value="">Sin categoría</MenuItem>
+                {categorias.map(cat => (<MenuItem key={cat} value={cat}>{cat}</MenuItem>))}
+              </Select>
+            </FormControl>
+            
+            <Box display="flex" gap={2} justifyContent="flex-end">
+              <Button 
+                variant="outlined" 
+                onClick={() => {
+                  console.log('Cancelando');
+                  setDialogOpen(false); 
+                  limpiarFormulario();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handleAgregar}>
+                {editandoId ? 'Guardar' : 'Agregar'}
+              </Button>
+            </Box>
+          </Paper>
+        </Box>
+      )}
     </Container>
   );
 }
