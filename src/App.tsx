@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container, Typography, Box, Paper, Button, TextField, MenuItem, Select, InputLabel, FormControl, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent, Chip } from '@mui/material';
+import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent, Chip } from '@mui/material';
 import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search } from '@mui/icons-material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
@@ -50,6 +50,9 @@ function AppContent() {
   // Cargar datos del localStorage al iniciar
   useEffect(() => {
     const datosGuardados = localStorage.getItem('transacciones-gastos');
+    const categoriasGuardadas = localStorage.getItem('categorias-gastos');
+    const tarjetasGuardadas = localStorage.getItem('tarjetas-gastos');
+    
     if (datosGuardados) {
       try {
         const transaccionesCargadas = JSON.parse(datosGuardados);
@@ -73,6 +76,24 @@ function AppContent() {
       ];
       setTransacciones(transaccionesEjemplo);
     }
+
+    if (categoriasGuardadas) {
+      try {
+        const categoriasArray = JSON.parse(categoriasGuardadas);
+        setCategorias(categoriasArray);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+      }
+    }
+
+    if (tarjetasGuardadas) {
+      try {
+        const tarjetasArray = JSON.parse(tarjetasGuardadas);
+        setTarjetasPersonalizadas(tarjetasArray);
+      } catch (error) {
+        console.error('Error al cargar tarjetas:', error);
+      }
+    }
   }, []);
 
   // Guardar datos en localStorage cuando cambian las transacciones
@@ -81,6 +102,16 @@ function AppContent() {
       localStorage.setItem('transacciones-gastos', JSON.stringify(transacciones));
     }
   }, [transacciones]);
+
+  // Guardar categorías en localStorage
+  useEffect(() => {
+    localStorage.setItem('categorias-gastos', JSON.stringify(categorias));
+  }, [categorias]);
+
+  // Guardar tarjetas en localStorage  
+  useEffect(() => {
+    localStorage.setItem('tarjetas-gastos', JSON.stringify(tarjetasPersonalizadas));
+  }, [tarjetasPersonalizadas]);
 
   const handleAgregar = () => {
     if (!descripcion || !monto || !fecha) {
@@ -440,19 +471,31 @@ function AppContent() {
                 onChange={(e) => setFechaFiltro(e.target.value)}
                 InputLabelProps={{ shrink: true }}
               />
-              <FormControl fullWidth>
-                <InputLabel>Filtrar por categoría</InputLabel>
-                <Select
+              <Box sx={{ minWidth: { xs: '100%', md: '33%' } }}>
+                <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Filtrar por categoría</Typography>
+                <select 
+                  style={{ 
+                    width: '100%', 
+                    padding: '16.5px 14px', 
+                    border: '1px solid #ccc', 
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#fff',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
                   value={categoriaFiltro}
-                  label="Filtrar por categoría"
                   onChange={(e) => setCategoriaFiltro(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                  onBlur={(e) => e.target.style.borderColor = '#ccc'}
                 >
-                  <MenuItem value="">Todas las categorías</MenuItem>
+                  <option value="">Todas las categorías</option>
                   {categorias.map(cat => (
-                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
+                    <option key={cat} value={cat}>{cat}</option>
                   ))}
-                </Select>
-              </FormControl>
+                </select>
+              </Box>
             </Box>
             
             <Box mt={2} display="flex" gap={1} flexWrap="wrap">
@@ -908,18 +951,29 @@ function AppContent() {
               {editandoId ? '✏️ Editar transacción' : `➕ Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
             </Typography>
             
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="tipo-label">Tipo</InputLabel>
-              <Select
-                labelId="tipo-label"
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Tipo</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
                 value={tipo}
-                label="Tipo"
-                onChange={e => setTipo(e.target.value as TipoTransaccion)}
+                onChange={(e) => setTipo(e.target.value as TipoTransaccion)}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
               >
-                <MenuItem value="gasto">💸 Gasto</MenuItem>
-                <MenuItem value="ingreso">💰 Ingreso</MenuItem>
-              </Select>
-            </FormControl>
+                <option value="gasto">💸 Gasto</option>
+                <option value="ingreso">💰 Ingreso</option>
+              </select>
+            </Box>
             
             <TextField 
               fullWidth 
@@ -949,46 +1003,83 @@ function AppContent() {
               InputLabelProps={{ shrink: true }} 
             />
             
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="futuro-label">¿Es futuro?</InputLabel>
-              <Select
-                labelId="futuro-label"
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>¿Es futuro?</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
                 value={esFuturo ? 'si' : 'no'}
-                label="¿Es futuro?"
-                onChange={e => setEsFuturo(e.target.value === 'si')}
+                onChange={(e) => setEsFuturo(e.target.value === 'si')}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
               >
-                <MenuItem value="no">No</MenuItem>
-                <MenuItem value="si">Sí</MenuItem>
-              </Select>
-            </FormControl>
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+              </select>
+            </Box>
             
             {esFuturo && (
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel id="tarjeta-label">Tarjeta (opcional)</InputLabel>
-                <Select
-                  labelId="tarjeta-label"
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Tarjeta (opcional)</Typography>
+                <select 
+                  style={{ 
+                    width: '100%', 
+                    padding: '16.5px 14px', 
+                    border: '1px solid #ccc', 
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#fff',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
                   value={tarjeta}
-                  label="Tarjeta (opcional)"
-                  onChange={e => setTarjeta(e.target.value)}
+                  onChange={(e) => setTarjeta(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                  onBlur={(e) => e.target.style.borderColor = '#ccc'}
                 >
-                  <MenuItem value="">Sin tarjeta</MenuItem>
-                  {tarjetasPersonalizadas.map(t => (<MenuItem key={t} value={t}>{t}</MenuItem>))}
-                </Select>
-              </FormControl>
+                  <option value="">Sin tarjeta</option>
+                  {tarjetasPersonalizadas.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </Box>
             )}
             
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel id="categoria-label">Categoría</InputLabel>
-              <Select
-                labelId="categoria-label"
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Categoría</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
                 value={categoria}
-                label="Categoría"
-                onChange={e => setCategoria(e.target.value)}
+                onChange={(e) => setCategoria(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
               >
-                <MenuItem value="">Sin categoría</MenuItem>
-                {categorias.map(cat => (<MenuItem key={cat} value={cat}>{cat}</MenuItem>))}
-              </Select>
-            </FormControl>
+                <option value="">Sin categoría</option>
+                {categorias.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </Box>
             
             <Box display="flex" gap={2} justifyContent="flex-end">
               <Button 
