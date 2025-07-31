@@ -1,6 +1,10 @@
-const { app, BrowserWindow, Menu } = require('electron');
-const path = require('path');
-const isDev = require('electron-is-dev');
+import { app, BrowserWindow, Menu } from 'electron';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import isDev from 'electron-is-dev';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 function createWindow() {
   // Crear la ventana del navegador
@@ -12,19 +16,23 @@ function createWindow() {
       contextIsolation: true,
       enableRemoteModule: false
     },
-    icon: path.join(__dirname, 'favicon.ico'), // Opcional: ícono de la app
+    icon: join(__dirname, 'favicon.ico'), // Opcional: ícono de la app
     title: '💰 Gestión Financiera'
   });
 
+  // Verificar si estamos en desarrollo
+  const envDev = process.env.ELECTRON_IS_DEV;
+  const isDevEnv = envDev && envDev.trim() === 'true';
+  
   // Cargar la app
-  const startUrl = isDev 
-    ? 'http://localhost:3000' 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+  const startUrl = (isDev || isDevEnv)
+    ? 'http://localhost:5174' 
+    : `file://${join(__dirname, '../dist/index.html')}`;
   
   mainWindow.loadURL(startUrl);
 
   // Abrir DevTools solo en desarrollo
-  if (isDev) {
+  if (isDev || isDevEnv) {
     mainWindow.webContents.openDevTools();
   }
 
