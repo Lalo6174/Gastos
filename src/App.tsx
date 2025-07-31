@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent, Chip } from '@mui/material';
 import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search } from '@mui/icons-material';
@@ -178,7 +178,6 @@ function AppContent() {
   const ingresosFuturos = transacciones.filter(t => t.tipo === 'ingreso' && t.esFuturo).reduce((a, b) => a + b.monto, 0);
   const balanceActual = ingresosActuales - gastosActuales;
   const balanceFuturo = ingresosFuturos - gastosFuturos;
-  const balanceTotal = balanceActual + balanceFuturo;
 
   // Función para filtrar transacciones
   const filtrarTransacciones = (transaccionesArray: Transaccion[]) => {
