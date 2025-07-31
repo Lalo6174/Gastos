@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Tabs, Tab, Card, CardContent, Chip } from '@mui/material';
-import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search } from '@mui/icons-material';
+import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Card, CardContent, Chip, ListItemIcon } from '@mui/material';
+import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, BarChart, SearchOutlined, CalendarMonth, MoneyOff, AttachMoney, AutoGraph, Settings } from '@mui/icons-material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
@@ -282,27 +282,87 @@ function AppContent() {
 
   const colores = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347', '#87ceeb'];
 
+  const menuItems = [
+    { id: 0, label: 'Dashboard', icon: <Dashboard />, emoji: '📊' },
+    { id: 1, label: 'Gráficos', icon: <BarChart />, emoji: '📈' },
+    { id: 2, label: 'Búsqueda', icon: <SearchOutlined />, emoji: '🔍' },
+    { id: 3, label: 'Calendario', icon: <CalendarMonth />, emoji: '📅' },
+    { id: 4, label: 'Gastos', icon: <MoneyOff />, emoji: '💸' },
+    { id: 5, label: 'Ingresos', icon: <AttachMoney />, emoji: '💰' },
+    { id: 6, label: 'Futuros', icon: <AutoGraph />, emoji: '🔮' },
+    { id: 7, label: 'Configuración', icon: <Settings />, emoji: '⚙️' },
+  ];
+
   return (
-    <Container maxWidth="md" sx={{ py: 4, bgcolor: '#f5f5f5', minHeight: '100vh' }}>
-      <Typography variant="h4" gutterBottom align="center" sx={{ color: '#222', fontWeight: 700 }}>
-        💰 Gestión Financiera
-      </Typography>
-      
-      <Box mb={2}>
-        <Tabs value={tab} onChange={(_,v)=>setTab(v)} centered variant="scrollable" scrollButtons="auto">
-          <Tab label="📊 Dashboard" />
-          <Tab label="📈 Gráficos" />
-          <Tab label="🔍 Búsqueda" />
-          <Tab label="📅 Calendario" />
-          <Tab label="💸 Gastos" />
-          <Tab label="💰 Ingresos" />
-          <Tab label="🔮 Futuros" />
-          <Tab label="⚙️ Configuración" />
-        </Tabs>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f5f5f5' }}>
+      {/* Sidebar */}
+      <Box
+        sx={{
+          width: 280,
+          bgcolor: '#1a1a1a',
+          color: '#fff',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'fixed',
+          height: '100vh',
+          zIndex: 1000,
+          boxShadow: '2px 0 10px rgba(0,0,0,0.1)'
+        }}
+      >
+        {/* Header del sidebar */}
+        <Box sx={{ p: 3, borderBottom: '1px solid #333' }}>
+          <Typography variant="h5" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+            💰 Gestión Financiera
+          </Typography>
+        </Box>
+
+        {/* Menú de navegación */}
+        <Box sx={{ flex: 1, py: 2 }}>
+          {menuItems.map((item) => (
+            <ListItem
+              key={item.id}
+              sx={{
+                mx: 1,
+                mb: 1,
+                borderRadius: 2,
+                cursor: 'pointer',
+                bgcolor: tab === item.id ? '#2196f3' : 'transparent',
+                '&:hover': {
+                  bgcolor: tab === item.id ? '#1976d2' : '#333',
+                },
+                transition: 'all 0.2s ease'
+              }}
+              onClick={() => setTab(item.id)}
+            >
+              <ListItemIcon sx={{ color: 'inherit', minWidth: 40 }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span style={{ fontSize: '1.2em' }}>{item.emoji}</span>
+                    <span>{item.label}</span>
+                  </Box>
+                }
+              />
+            </ListItem>
+          ))}
+        </Box>
+
+        {/* Footer del sidebar */}
+        <Box sx={{ p: 2, borderTop: '1px solid #333', fontSize: '0.875rem', color: '#888' }}>
+          <Typography variant="caption">
+            � Los datos se guardan automáticamente
+          </Typography>
+        </Box>
       </Box>
 
-      {/* Dashboard Principal */}
-      {tab === 0 && (
+      {/* Contenido principal */}
+      <Box sx={{ flex: 1, ml: '280px' }}>
+        <Container maxWidth="lg" sx={{ py: 4 }}>
+
+          {/* Dashboard Principal */}
+          {tab === 0 && (
         <>
           <Box display="flex" gap={2} mb={3} flexWrap="wrap">
             <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#e8f5e8', color: '#2e7d32' }}>
@@ -1097,7 +1157,9 @@ function AppContent() {
           </Paper>
         </Box>
       )}
-    </Container>
+      </Container>
+      </Box>
+    </Box>
   );
 }
 

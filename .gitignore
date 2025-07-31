@@ -8,6 +8,28 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+
+# Build outputs
+dist/
+dist-electron/
+*.zip
+*.exe
+*.asar
+GestionFinanciera-App.zip
+
+# Electron apps
+App-Final-Gastos/
+Gastos-App/
+app-portable/
+
+# Temporary files
+*.tmp
+*.temp
+test.html
+src/App-backup.tsx
+src/App-complex.tsx
+src/App-simple.tsx
+src/App-test.tsx
 dist
 dist-ssr
 *.local
