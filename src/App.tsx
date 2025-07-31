@@ -37,9 +37,6 @@ function AppContent() {
   const [categorias, setCategorias] = useState<string[]>(categoriasBase);
   const [tarjetasPersonalizadas, setTarjetasPersonalizadas] = useState<string[]>(tarjetas);
 
-  console.log('Estado actual del diálogo:', dialogOpen);
-  console.log('Cantidad de transacciones:', transacciones.length);
-
   // Cargar datos del localStorage al iniciar
   useEffect(() => {
     const datosGuardados = localStorage.getItem('transacciones-gastos');
@@ -96,11 +93,9 @@ function AppContent() {
   };
 
   const abrirDialogoNuevo = (tipoTransaccion: TipoTransaccion) => {
-    console.log('Abriendo diálogo para tipo:', tipoTransaccion);
     limpiarFormulario();
     setTipo(tipoTransaccion);
     setDialogOpen(true);
-    console.log('Estado del diálogo después de abrir:', true);
   };
 
   const handleEliminar = (id:number) => {
@@ -202,10 +197,7 @@ function AppContent() {
               variant="contained" 
               color="success" 
               startIcon={<Add />} 
-              onClick={() => {
-                console.log('Botón ingreso clickeado');
-                abrirDialogoNuevo('ingreso');
-              }}
+              onClick={() => abrirDialogoNuevo('ingreso')}
             >
               Agregar Ingreso
             </Button>
@@ -213,10 +205,7 @@ function AppContent() {
               variant="contained" 
               color="error" 
               startIcon={<Add />} 
-              onClick={() => {
-                console.log('Botón gasto clickeado');
-                abrirDialogoNuevo('gasto');
-              }}
+              onClick={() => abrirDialogoNuevo('gasto')}
             >
               Agregar Gasto
             </Button>
@@ -477,7 +466,6 @@ function AppContent() {
             zIndex: 9999,
           }}
           onClick={() => {
-            console.log('Fondo clickeado - cerrando');
             setDialogOpen(false);
             limpiarFormulario();
           }}
@@ -582,7 +570,6 @@ function AppContent() {
               <Button 
                 variant="outlined" 
                 onClick={() => {
-                  console.log('Cancelando');
                   setDialogOpen(false); 
                   limpiarFormulario();
                 }}
