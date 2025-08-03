@@ -141,14 +141,44 @@ function AppContent() {
       } : t));
       alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} editado`);
     } else {
-      setTransacciones([...transacciones, {
-        id: Date.now(), descripcion, monto: parseFloat(monto), fecha, tipo, esFuturo,
-        tarjeta: esFuturo && tarjeta ? tarjeta : undefined,
-        categoria: categoria || undefined,
-        cuotas: cuotasValue,
-        mesInicio: mesInicioValue
-      }]);
-      alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`);
+      // Lógica de cuotas: si es pendiente y tiene cuotas y mesInicio, crear una transacción por cada cuota
+      if (esFuturo && cuotasValue && mesInicioValue) {
+        const montoTotal = parseFloat(monto);
+        const montoCuota = Math.round((montoTotal / cuotasValue) * 100) / 100;
+        const transaccionesCuotas = [];
+        let [anio, mes] = mesInicioValue.split('-').map(Number);
+        for (let i = 0; i < cuotasValue; i++) {
+          // Calcular fecha de la cuota (siempre el día de la fecha original, o el 1 si no hay)
+          const dia = fecha.split('-')[2] || '01';
+          let mesReal = mes + i;
+          let anioReal = anio + Math.floor((mesReal - 1) / 12);
+          mesReal = ((mesReal - 1) % 12) + 1;
+          const fechaCuota = `${anioReal}-${mesReal.toString().padStart(2, '0')}-${dia}`;
+          transaccionesCuotas.push({
+            id: Date.now() + i,
+            descripcion: `${descripcion} (cuota ${i + 1}/${cuotasValue})`,
+            monto: montoCuota,
+            fecha: fechaCuota,
+            tipo,
+            esFuturo: true,
+            tarjeta: tarjeta || undefined,
+            categoria: categoria || undefined,
+            cuotas: cuotasValue,
+            mesInicio: mesInicioValue
+          });
+        }
+        setTransacciones([...transacciones, ...transaccionesCuotas]);
+        alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} en cuotas agregado`);
+      } else {
+        setTransacciones([...transacciones, {
+          id: Date.now(), descripcion, monto: parseFloat(monto), fecha, tipo, esFuturo,
+          tarjeta: esFuturo && tarjeta ? tarjeta : undefined,
+          categoria: categoria || undefined,
+          cuotas: cuotasValue,
+          mesInicio: mesInicioValue
+        }]);
+        alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`);
+      }
     }
     limpiarFormulario();
     setDialogOpen(false);
