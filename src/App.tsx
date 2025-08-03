@@ -1022,39 +1022,75 @@ function AppContent() {
 
       {/* Tab de Pendientes */}
       {tab === 4 && (
-        <Paper sx={{ p: 2, bgcolor: '#f8fafc', color: '#222', minHeight: 400 }}>
-          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Transacciones pendientes</Typography>
-          <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Paper sx={{ p: 3, bgcolor: '#f4f8fb', color: '#222', minHeight: 400, borderRadius: 4, boxShadow: 6 }}>
+          <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: '#1565c0', letterSpacing: 1 }}>Pendientes y futuros</Typography>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
             <TextField
-              label="Filtrar por mes"
+              label="Filtrar por mes (YYYY-MM)"
               type="month"
               value={filtroMesPendiente || ''}
               onChange={e => setFiltroMesPendiente(e.target.value)}
               InputLabelProps={{ shrink: true }}
-              sx={{ minWidth: 180 }}
+              sx={{ minWidth: 180, bgcolor: '#fff', borderRadius: 2 }}
             />
             {filtroMesPendiente && (
-              <Button size="small" onClick={() => setFiltroMesPendiente('')}>Limpiar filtro</Button>
+              <Button size="small" variant="outlined" color="primary" onClick={() => setFiltroMesPendiente('')}>Limpiar filtro</Button>
             )}
           </Box>
-          {/* Agrupación y resumen por mes */}
+          {/* Agrupación y resumen por mes, robusta y considerando cuotas */}
           {(() => {
-            // Agrupar por mes (YYYY-MM)
-            const pendientes = transacciones.filter(t => t.esFuturo && (
-              !filtroMesPendiente || (t.mesInicio && t.mesInicio.startsWith(filtroMesPendiente)) || (!t.mesInicio && t.fecha.startsWith(filtroMesPendiente))
-            ));
-            if (pendientes.length === 0) {
-              return <Paper sx={{ p: 4, textAlign: 'center', color: '#888', boxShadow: 0 }}>No hay transacciones pendientes.</Paper>;
+            // Expandir transacciones con cuotas en "cuotas individuales" para agruparlas por mes real y número de cuota
+            const pendientesExpandido: Transaccion[] = [];
+            transacciones.forEach((t) => {
+              if (t.esFuturo && t.cuotas && t.mesInicio) {
+                const [anio, mes] = t.mesInicio.split('-').map(Number);
+                for (let i = 0; i < t.cuotas; i++) {
+                  let mesReal = mes + i;
+                  let anioReal = anio + Math.floor((mesReal - 1) / 12);
+                  mesReal = ((mesReal - 1) % 12) + 1;
+                  const mesStr = `${anioReal}-${mesReal.toString().padStart(2, '0')}`;
+                  if (!filtroMesPendiente || mesStr === filtroMesPendiente) {
+                    let descBase = t.descripcion.replace(/\(cuota \d+\/\d+\)/gi, '').trim();
+                    let descCuota = `${descBase} (cuota ${i + 1}/${t.cuotas})`;
+                    // Usar un id numérico único para React, pero mantener el id original para lógica
+                    pendientesExpandido.push({
+                      ...t,
+                      descripcion: descCuota,
+                      fecha: `${mesStr}-${(t.fecha || '01').slice(8, 10)}`,
+                      cuotaNro: i + 1,
+                      id: Number(`${t.id}${mesStr.replace('-', '')}${i + 1}`)
+                    });
+                  }
+                }
+              } else if (t.esFuturo) {
+                const mesStr = (t.fecha || '').slice(0, 7);
+                if (!filtroMesPendiente || mesStr === filtroMesPendiente || (t.mesInicio && t.mesInicio.slice(0, 7) === filtroMesPendiente)) {
+                  pendientesExpandido.push({ ...t, cuotaNro: undefined });
+                }
+              }
+            });
+            if (pendientesExpandido.length === 0) {
+              return <Paper sx={{ p: 4, textAlign: 'center', color: '#888', boxShadow: 0, bgcolor: '#f9f9f9', borderRadius: 3 }}>No hay transacciones pendientes para el filtro seleccionado.</Paper>;
             }
-            // Agrupar por mes
+            // Agrupar por mes real de la transacción (fecha)
             const grupos: { [mes: string]: Transaccion[] } = {};
-            pendientes.forEach((t: Transaccion) => {
+            pendientesExpandido.forEach((t: Transaccion) => {
               const mes = (t.fecha || '').slice(0, 7);
               if (!grupos[mes]) grupos[mes] = [];
-              grupos[mes].push(t);
+              // Clave única: descripcion + fecha + monto + tarjeta
+              const clave = `${t.descripcion}|${t.fecha}|${t.monto}|${t.tarjeta || ''}`;
+              if (!grupos[mes].some(x => `${x.descripcion}|${x.fecha}|${x.monto}|${x.tarjeta || ''}` === clave)) {
+                grupos[mes].push(t);
+              }
             });
-            // Ordenar meses
-            const meses = Object.keys(grupos).sort();
+            // Ordenar meses: desde el mes actual hacia el futuro
+            // (hoy eliminado, no se usa)
+            const meses = Object.keys(grupos).sort((a, b) => {
+              // YYYY-MM a Date
+              const da = new Date(a + '-01');
+              const db = new Date(b + '-01');
+              return da.getTime() - db.getTime();
+            });
             return meses.map((mes: string) => {
               const lista: Transaccion[] = grupos[mes];
               const totalGastos = lista.filter((t: Transaccion) => t.tipo === 'gasto').reduce((a: number, b: Transaccion) => a + b.monto, 0);
@@ -1062,42 +1098,43 @@ function AppContent() {
               const totalCuotas = lista.reduce((a: number, b: Transaccion) => a + (b.cuotas ? 1 : 0), 0);
               return (
                 <Box key={mes} sx={{ mb: 4 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: '#1976d2' }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: '#1976d2', textTransform: 'capitalize', letterSpacing: 0.5 }}>
                     {new Date(mes + '-01').toLocaleString('es-AR', { month: 'long', year: 'numeric' })}
                   </Typography>
-                  <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', borderRadius: 2, boxShadow: 2 }}>
                     <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 600 }}>Ingresos: ${totalIngresos.toFixed(2)}</Typography>
                     <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600 }}>Gastos: ${totalGastos.toFixed(2)}</Typography>
                     <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>Cuotas: {totalCuotas}</Typography>
                     <Typography variant="body2" sx={{ color: '#333', fontWeight: 600 }}>Total: ${(totalIngresos - totalGastos).toFixed(2)}</Typography>
                   </Paper>
                   <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }} gap={3}>
-                    {lista.map(t => (
+                    {lista.map((t) => (
                       <Card key={t.id} sx={{
                         p: 0,
-                        borderRadius: 3,
-                        boxShadow: 4,
-                        bgcolor: t.tipo === 'gasto' ? '#fff0f0' : '#e8f5e9',
-                        borderLeft: t.tipo === 'gasto' ? '6px solid #ff5252' : '6px solid #43a047',
+                        borderRadius: 4,
+                        boxShadow: 6,
+                        bgcolor: t.tipo === 'gasto' ? '#fff8f8' : '#e8f5e9',
+                        borderLeft: t.tipo === 'gasto' ? '6px solid #ef5350' : '6px solid #43a047',
                         display: 'flex',
                         flexDirection: 'column',
                         minHeight: 180,
                         position: 'relative',
                         transition: 'box-shadow 0.2s',
-                        '&:hover': { boxShadow: 8 }
+                        '&:hover': { boxShadow: 12, transform: 'scale(1.02)' }
                       }}>
                         <CardContent sx={{ pb: 1 }}>
                           <Box display="flex" alignItems="center" gap={2} mb={1}>
                             <Box sx={{
                               width: 48, height: 48, borderRadius: '50%',
-                              bgcolor: t.tipo === 'gasto' ? '#ff5252' : '#43a047',
+                              bgcolor: t.tipo === 'gasto' ? '#ef5350' : '#43a047',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              color: '#fff', fontSize: 28
+                              color: '#fff', fontSize: 28,
+                              boxShadow: t.tipo === 'gasto' ? '0 0 10px #ffebee' : '0 0 10px #e8f5e9'
                             }}>
                               {t.tipo === 'gasto' ? <TrendingDown sx={{ fontSize: 28 }} /> : <TrendingUp sx={{ fontSize: 28 }} />}
                             </Box>
                             <Box flex={1}>
-                              <Typography variant="subtitle1" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32' }}>
+                              <Typography variant="subtitle1" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32', fontSize: 18 }}>
                                 {t.descripcion}
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
@@ -1105,7 +1142,7 @@ function AppContent() {
                               </Typography>
                             </Box>
                             <Box>
-                              <Typography variant="h6" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32' }}>
+                              <Typography variant="h6" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32', fontSize: 20 }}>
                                 ${t.monto.toFixed(2)}
                               </Typography>
                             </Box>
