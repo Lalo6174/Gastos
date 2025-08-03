@@ -1022,9 +1022,9 @@ function AppContent() {
 
       {/* Tab de Pendientes */}
       {tab === 4 && (
-        <Paper sx={{ p: 2, bgcolor: '#fff', color: '#222' }}>
-          <Typography variant="h6">Transacciones pendientes</Typography>
-          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+        <Paper sx={{ p: 2, bgcolor: '#f8fafc', color: '#222', minHeight: 400 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>Transacciones pendientes</Typography>
+          <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
             <TextField
               label="Filtrar por mes"
               type="month"
@@ -1037,25 +1037,105 @@ function AppContent() {
               <Button size="small" onClick={() => setFiltroMesPendiente('')}>Limpiar filtro</Button>
             )}
           </Box>
-          <List>
-            {transacciones.filter(t => t.esFuturo && (
+          {/* Agrupación y resumen por mes */}
+          {(() => {
+            // Agrupar por mes (YYYY-MM)
+            const pendientes = transacciones.filter(t => t.esFuturo && (
               !filtroMesPendiente || (t.mesInicio && t.mesInicio.startsWith(filtroMesPendiente)) || (!t.mesInicio && t.fecha.startsWith(filtroMesPendiente))
-            )).length === 0 && (
-              <ListItem><ListItemText primary="No hay transacciones pendientes." /></ListItem>
-            )}
-            {transacciones.filter(t => t.esFuturo && (
-              !filtroMesPendiente || (t.mesInicio && t.mesInicio.startsWith(filtroMesPendiente)) || (!t.mesInicio && t.fecha.startsWith(filtroMesPendiente))
-            )).map(t => (
-              <ListItem key={t.id} divider>
-                <ListItemText 
-                  primary={`${t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}: ${t.descripcion}`} 
-                  secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.tarjeta ? ` — ${t.tarjeta}` : ''}${t.categoria ? ` — ${t.categoria}` : ''}${t.cuotas ? ` — ${t.cuotas} cuotas` : ''}${t.mesInicio ? ` — Desde: ${t.mesInicio}` : ''}`} 
-                />
-                <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
-                <IconButton onClick={()=>handleEliminar(t.id)}><Delete /></IconButton>
-              </ListItem>
-            ))}
-          </List>
+            ));
+            if (pendientes.length === 0) {
+              return <Paper sx={{ p: 4, textAlign: 'center', color: '#888', boxShadow: 0 }}>No hay transacciones pendientes.</Paper>;
+            }
+            // Agrupar por mes
+            const grupos: { [mes: string]: Transaccion[] } = {};
+            pendientes.forEach((t: Transaccion) => {
+              const mes = (t.fecha || '').slice(0, 7);
+              if (!grupos[mes]) grupos[mes] = [];
+              grupos[mes].push(t);
+            });
+            // Ordenar meses
+            const meses = Object.keys(grupos).sort();
+            return meses.map((mes: string) => {
+              const lista: Transaccion[] = grupos[mes];
+              const totalGastos = lista.filter((t: Transaccion) => t.tipo === 'gasto').reduce((a: number, b: Transaccion) => a + b.monto, 0);
+              const totalIngresos = lista.filter((t: Transaccion) => t.tipo === 'ingreso').reduce((a: number, b: Transaccion) => a + b.monto, 0);
+              const totalCuotas = lista.reduce((a: number, b: Transaccion) => a + (b.cuotas ? 1 : 0), 0);
+              return (
+                <Box key={mes} sx={{ mb: 4 }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: '#1976d2' }}>
+                    {new Date(mes + '-01').toLocaleString('es-AR', { month: 'long', year: 'numeric' })}
+                  </Typography>
+                  <Paper sx={{ p: 2, mb: 2, bgcolor: '#e3f2fd', display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: '#2e7d32', fontWeight: 600 }}>Ingresos: ${totalIngresos.toFixed(2)}</Typography>
+                    <Typography variant="body2" sx={{ color: '#d32f2f', fontWeight: 600 }}>Gastos: ${totalGastos.toFixed(2)}</Typography>
+                    <Typography variant="body2" sx={{ color: '#1976d2', fontWeight: 600 }}>Cuotas: {totalCuotas}</Typography>
+                    <Typography variant="body2" sx={{ color: '#333', fontWeight: 600 }}>Total: ${(totalIngresos - totalGastos).toFixed(2)}</Typography>
+                  </Paper>
+                  <Box display="grid" gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }} gap={3}>
+                    {lista.map(t => (
+                      <Card key={t.id} sx={{
+                        p: 0,
+                        borderRadius: 3,
+                        boxShadow: 4,
+                        bgcolor: t.tipo === 'gasto' ? '#fff0f0' : '#e8f5e9',
+                        borderLeft: t.tipo === 'gasto' ? '6px solid #ff5252' : '6px solid #43a047',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        minHeight: 180,
+                        position: 'relative',
+                        transition: 'box-shadow 0.2s',
+                        '&:hover': { boxShadow: 8 }
+                      }}>
+                        <CardContent sx={{ pb: 1 }}>
+                          <Box display="flex" alignItems="center" gap={2} mb={1}>
+                            <Box sx={{
+                              width: 48, height: 48, borderRadius: '50%',
+                              bgcolor: t.tipo === 'gasto' ? '#ff5252' : '#43a047',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              color: '#fff', fontSize: 28
+                            }}>
+                              {t.tipo === 'gasto' ? <TrendingDown sx={{ fontSize: 28 }} /> : <TrendingUp sx={{ fontSize: 28 }} />}
+                            </Box>
+                            <Box flex={1}>
+                              <Typography variant="subtitle1" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32' }}>
+                                {t.descripcion}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {t.fecha}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <Typography variant="h6" fontWeight={700} sx={{ color: t.tipo === 'gasto' ? '#d32f2f' : '#2e7d32' }}>
+                                ${t.monto.toFixed(2)}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Box display="flex" gap={1} flexWrap="wrap" mb={1}>
+                            {t.cuotas && (
+                              <Chip label={`Cuotas: ${t.cuotas}`} size="small" color="primary" variant="outlined" />
+                            )}
+                            {t.mesInicio && (
+                              <Chip label={`Desde: ${t.mesInicio}`} size="small" color="info" variant="outlined" />
+                            )}
+                            {t.tarjeta && (
+                              <Chip label={t.tarjeta} size="small" color="secondary" variant="outlined" />
+                            )}
+                            {t.categoria && (
+                              <Chip label={t.categoria} size="small" color="default" variant="outlined" />
+                            )}
+                          </Box>
+                        </CardContent>
+                        <Box display="flex" gap={1} justifyContent="flex-end" px={2} pb={2}>
+                          <IconButton onClick={()=>handleEditar(t)} size="small" sx={{ bgcolor: '#f5f5f5', '&:hover': { bgcolor: '#e0e0e0' } }}><Edit fontSize="small" /></IconButton>
+                          <IconButton onClick={()=>handleEliminar(t.id)} size="small" sx={{ bgcolor: '#f5f5f5', '&:hover': { bgcolor: '#ffeaea' } }}><Delete fontSize="small" /></IconButton>
+                        </Box>
+                      </Card>
+                    ))}
+                  </Box>
+                </Box>
+              );
+            });
+          })()}
         </Paper>
       )}
 
