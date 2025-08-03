@@ -1040,7 +1040,8 @@ function AppContent() {
           {/* Agrupación y resumen por mes, robusta y considerando cuotas */}
           {(() => {
             // Expandir transacciones con cuotas en "cuotas individuales" para agruparlas por mes real y número de cuota
-            const pendientesExpandido: Transaccion[] = [];
+            type PendienteConMes = Transaccion & { mesAgrupador: string };
+            const pendientesExpandido: PendienteConMes[] = [];
             transacciones.forEach((t) => {
               if (t.esFuturo && t.cuotas && t.mesInicio) {
                 const [anio, mes] = t.mesInicio.split('-').map(Number);
@@ -1052,30 +1053,30 @@ function AppContent() {
                   if (!filtroMesPendiente || mesStr === filtroMesPendiente) {
                     let descBase = t.descripcion.replace(/\(cuota \d+\/\d+\)/gi, '').trim();
                     let descCuota = `${descBase} (cuota ${i + 1}/${t.cuotas})`;
-                    // Usar un id numérico único para React, pero mantener el id original para lógica
                     pendientesExpandido.push({
                       ...t,
                       descripcion: descCuota,
                       fecha: `${mesStr}-${(t.fecha || '01').slice(8, 10)}`,
                       cuotaNro: i + 1,
-                      id: Number(`${t.id}${mesStr.replace('-', '')}${i + 1}`)
+                      id: Number(`${t.id}${mesStr.replace('-', '')}${i + 1}`),
+                      mesAgrupador: mesStr
                     });
                   }
                 }
               } else if (t.esFuturo) {
                 const mesStr = (t.fecha || '').slice(0, 7);
                 if (!filtroMesPendiente || mesStr === filtroMesPendiente || (t.mesInicio && t.mesInicio.slice(0, 7) === filtroMesPendiente)) {
-                  pendientesExpandido.push({ ...t, cuotaNro: undefined });
+                  pendientesExpandido.push({ ...t, cuotaNro: undefined, mesAgrupador: mesStr });
                 }
               }
             });
             if (pendientesExpandido.length === 0) {
               return <Paper sx={{ p: 4, textAlign: 'center', color: '#888', boxShadow: 0, bgcolor: '#f9f9f9', borderRadius: 3 }}>No hay transacciones pendientes para el filtro seleccionado.</Paper>;
             }
-            // Agrupar por mes real de la transacción (fecha)
-            const grupos: { [mes: string]: Transaccion[] } = {};
-            pendientesExpandido.forEach((t: Transaccion) => {
-              const mes = (t.fecha || '').slice(0, 7);
+            // Agrupar por mesAgrupador (el mes real de la cuota o transacción)
+            const grupos: { [mes: string]: PendienteConMes[] } = {};
+            pendientesExpandido.forEach((t: PendienteConMes) => {
+              const mes = t.mesAgrupador;
               if (!grupos[mes]) grupos[mes] = [];
               // Clave única: descripcion + fecha + monto + tarjeta
               const clave = `${t.descripcion}|${t.fecha}|${t.monto}|${t.tarjeta || ''}`;
@@ -1084,18 +1085,18 @@ function AppContent() {
               }
             });
             // Ordenar meses: desde el mes actual hacia el futuro
-            // (hoy eliminado, no se usa)
             const meses = Object.keys(grupos).sort((a, b) => {
-              // YYYY-MM a Date
               const da = new Date(a + '-01');
               const db = new Date(b + '-01');
               return da.getTime() - db.getTime();
             });
-            return meses.map((mes: string) => {
-              const lista: Transaccion[] = grupos[mes];
-              const totalGastos = lista.filter((t: Transaccion) => t.tipo === 'gasto').reduce((a: number, b: Transaccion) => a + b.monto, 0);
-              const totalIngresos = lista.filter((t: Transaccion) => t.tipo === 'ingreso').reduce((a: number, b: Transaccion) => a + b.monto, 0);
-              const totalCuotas = lista.reduce((a: number, b: Transaccion) => a + (b.cuotas ? 1 : 0), 0);
+            // Si hay filtro de mes, solo mostrar ese grupo
+            const mesesFiltrados = filtroMesPendiente ? meses.filter(m => m === filtroMesPendiente) : meses;
+            return mesesFiltrados.map((mes: string) => {
+              const lista: PendienteConMes[] = grupos[mes];
+              const totalGastos = lista.filter((t: PendienteConMes) => t.tipo === 'gasto').reduce((a: number, b: PendienteConMes) => a + b.monto, 0);
+              const totalIngresos = lista.filter((t: PendienteConMes) => t.tipo === 'ingreso').reduce((a: number, b: PendienteConMes) => a + b.monto, 0);
+              const totalCuotas = lista.reduce((a: number, b: PendienteConMes) => a + (b.cuotas ? 1 : 0), 0);
               return (
                 <Box key={mes} sx={{ mb: 4 }}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, color: '#1976d2', textTransform: 'capitalize', letterSpacing: 0.5 }}>
