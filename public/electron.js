@@ -17,7 +17,7 @@ function createWindow() {
       enableRemoteModule: false
     },
     icon: join(__dirname, 'favicon.ico'), // Opcional: ícono de la app
-    title: '💰 Gestión Financiera'
+    title: 'Gestión Financiera'
   });
 
   // Verificar si estamos en desarrollo

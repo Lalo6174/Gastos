@@ -283,14 +283,14 @@ function AppContent() {
   const colores = ['#8884d8', '#82ca9d', '#ffc658', '#ff7c7c', '#8dd1e1', '#d084d0', '#ffb347', '#87ceeb'];
 
   const menuItems = [
-    { id: 0, label: 'Dashboard', icon: <Dashboard />, emoji: '📊' },
-    { id: 1, label: 'Gráficos', icon: <BarChart />, emoji: '📈' },
-    { id: 2, label: 'Búsqueda', icon: <SearchOutlined />, emoji: '🔍' },
-    { id: 3, label: 'Calendario', icon: <CalendarMonth />, emoji: '📅' },
-    { id: 4, label: 'Gastos', icon: <MoneyOff />, emoji: '💸' },
-    { id: 5, label: 'Ingresos', icon: <AttachMoney />, emoji: '💰' },
-    { id: 6, label: 'Futuros', icon: <AutoGraph />, emoji: '🔮' },
-    { id: 7, label: 'Configuración', icon: <Settings />, emoji: '⚙️' },
+    { id: 0, label: 'Dashboard', icon: <Dashboard /> },
+    { id: 1, label: 'Gráficos', icon: <BarChart /> },
+    { id: 2, label: 'Búsqueda', icon: <SearchOutlined /> },
+    { id: 3, label: 'Calendario', icon: <CalendarMonth /> },
+    { id: 4, label: 'Gastos', icon: <MoneyOff /> },
+    { id: 5, label: 'Ingresos', icon: <AttachMoney /> },
+    { id: 6, label: 'Futuros', icon: <AutoGraph /> },
+    { id: 7, label: 'Configuración', icon: <Settings /> },
   ];
 
   return (
@@ -312,7 +312,7 @@ function AppContent() {
         {/* Header del sidebar */}
         <Box sx={{ p: 3, borderBottom: '1px solid #333' }}>
           <Typography variant="h5" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-            💰 Gestión Financiera
+            Gestión Financiera
           </Typography>
         </Box>
 
@@ -338,12 +338,7 @@ function AppContent() {
                 {item.icon}
               </ListItemIcon>
               <ListItemText 
-                primary={
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <span style={{ fontSize: '1.2em' }}>{item.emoji}</span>
-                    <span>{item.label}</span>
-                  </Box>
-                }
+                primary={item.label}
               />
             </ListItem>
           ))}
@@ -398,7 +393,7 @@ function AppContent() {
           </Box>
 
           <Paper sx={{p:3, mb:3, bgcolor: '#fff', color: '#222'}}>
-            <Typography variant="h6" gutterBottom>📋 Resumen Detallado</Typography>
+            <Typography variant="h6" gutterBottom>Resumen Detallado</Typography>
             <Box display="flex" gap={4} flexWrap="wrap">
               <Box flex={1} minWidth={200}>
                 <Typography><strong>Ingresos actuales:</strong> ${ingresosActuales.toFixed(2)}</Typography>
@@ -438,14 +433,14 @@ function AppContent() {
       {tab === 1 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-            📈 Análisis Gráfico
+            Análisis Gráfico
           </Typography>
           
           <Box display="flex" flexDirection="column" gap={3}>
             {/* Gráfico de Gastos por Categoría */}
             <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
               <Paper sx={{ p: 3, flex: 1 }}>
-                <Typography variant="h6" gutterBottom>💸 Gastos por Categoría</Typography>
+                <Typography variant="h6" gutterBottom>Gastos por Categoría</Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
@@ -468,7 +463,7 @@ function AppContent() {
 
             {/* Gráfico Temporal */}
               <Paper sx={{ p: 3, flex: 1 }}>
-                <Typography variant="h6" gutterBottom>📊 Tendencia Temporal (6 meses)</Typography>
+                <Typography variant="h6" gutterBottom>Tendencia Temporal (6 meses)</Typography>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={ultimosSeisMeses}>
                     <CartesianGrid strokeDasharray="3 3" />
@@ -486,7 +481,7 @@ function AppContent() {
 
             {/* Gráfico de Barras Comparativo */}
             <Paper sx={{ p: 3 }}>
-              <Typography variant="h6" gutterBottom>📊 Comparativa Mensual</Typography>
+              <Typography variant="h6" gutterBottom>Comparativa Mensual</Typography>
               <ResponsiveContainer width="100%" height={300}>
                 <RechartsBarChart data={ultimosSeisMeses}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -507,7 +502,7 @@ function AppContent() {
       {tab === 2 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-            🔍 Búsqueda y Filtros
+            Búsqueda y Filtros
           </Typography>
           
           <Paper sx={{ p: 3, mb: 3 }}>
@@ -595,7 +590,7 @@ function AppContent() {
 
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              📋 Resultados ({filtrarTransacciones(transacciones).length} transacciones)
+              Resultados ({filtrarTransacciones(transacciones).length} transacciones)
             </Typography>
             <List>
               {filtrarTransacciones(transacciones).length === 0 ? (
@@ -606,7 +601,7 @@ function AppContent() {
                 filtrarTransacciones(transacciones).map(t => (
                   <ListItem key={t.id} divider>
                     <ListItemText 
-                      primary={`${t.tipo === 'gasto' ? '💸' : '💰'} ${t.descripcion}`} 
+                      primary={`${t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}: ${t.descripcion}`} 
                       secondary={
                         <Box>
                           <Typography variant="body2">
@@ -632,7 +627,7 @@ function AppContent() {
       {tab === 3 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-            📅 Vista de Calendario
+            Vista de Calendario
           </Typography>
           
           <Paper sx={{ p: 3, mb: 3 }}>
@@ -721,11 +716,11 @@ function AppContent() {
                   {dia.transacciones.length > 0 && (
                     <Box>
                       <Typography variant="caption" color={dia.gastos > 0 ? 'error' : 'success'}>
-                        {dia.gastos > 0 && `💸 $${dia.gastos.toFixed(0)}`}
+                        {dia.gastos > 0 && `Gastos: $${dia.gastos.toFixed(0)}`}
                       </Typography>
                       <br />
                       <Typography variant="caption" color="success">
-                        {dia.ingresos > 0 && `💰 $${dia.ingresos.toFixed(0)}`}
+                        {dia.ingresos > 0 && `Ingresos: $${dia.ingresos.toFixed(0)}`}
                       </Typography>
                       <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
                         {dia.transacciones.length} transacción{dia.transacciones.length !== 1 ? 'es' : ''}
@@ -742,7 +737,7 @@ function AppContent() {
       {/* Tab de Gastos */}
       {tab === 4 && (
         <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff', color: '#222' }}>
-          <Typography variant="h6">💸 Gastos actuales</Typography>
+          <Typography variant="h6">Gastos actuales</Typography>
           <List>
             {transacciones.filter(t => t.tipo === 'gasto' && !t.esFuturo).length === 0 && (
               <ListItem><ListItemText primary="No hay gastos actuales." /></ListItem>
@@ -750,7 +745,7 @@ function AppContent() {
             {transacciones.filter(t => t.tipo === 'gasto' && !t.esFuturo).map(t => (
               <ListItem key={t.id} divider>
                 <ListItemText 
-                  primary={`💸 ${t.descripcion}`} 
+                  primary={`Gasto: ${t.descripcion}`} 
                   secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.categoria ? ` — ${t.categoria}` : ''}`} 
                 />
                 <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
@@ -764,7 +759,7 @@ function AppContent() {
       {/* Tab de Ingresos */}
       {tab === 5 && (
         <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff', color: '#222' }}>
-          <Typography variant="h6">💰 Ingresos actuales</Typography>
+          <Typography variant="h6">Ingresos actuales</Typography>
           <List>
             {transacciones.filter(t => t.tipo === 'ingreso' && !t.esFuturo).length === 0 && (
               <ListItem><ListItemText primary="No hay ingresos actuales." /></ListItem>
@@ -772,7 +767,7 @@ function AppContent() {
             {transacciones.filter(t => t.tipo === 'ingreso' && !t.esFuturo).map(t => (
               <ListItem key={t.id} divider>
                 <ListItemText 
-                  primary={`💰 ${t.descripcion}`} 
+                  primary={`Ingreso: ${t.descripcion}`} 
                   secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.categoria ? ` — ${t.categoria}` : ''}`} 
                 />
                 <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
@@ -786,7 +781,7 @@ function AppContent() {
       {/* Tab de Futuros */}
       {tab === 6 && (
         <Paper sx={{ p: 2, bgcolor: '#fff', color: '#222' }}>
-          <Typography variant="h6">🔮 Transacciones futuras</Typography>
+          <Typography variant="h6">Transacciones futuras</Typography>
           <List>
             {transacciones.filter(t => t.esFuturo).length === 0 && (
               <ListItem><ListItemText primary="No hay transacciones futuras." /></ListItem>
@@ -794,7 +789,7 @@ function AppContent() {
             {transacciones.filter(t => t.esFuturo).map(t => (
               <ListItem key={t.id} divider>
                 <ListItemText 
-                  primary={`${t.tipo === 'gasto' ? '💸' : '💰'} ${t.descripcion}`} 
+                  primary={`${t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}: ${t.descripcion}`} 
                   secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.tarjeta ? ` — ${t.tarjeta}` : ''}${t.categoria ? ` — ${t.categoria}` : ''}`} 
                 />
                 <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
@@ -809,7 +804,7 @@ function AppContent() {
       {tab === 7 && (
         <Box>
           <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
-            <Typography variant="h6" gutterBottom>🏷️ Gestión de Categorías</Typography>
+            <Typography variant="h6" gutterBottom>Gestión de Categorías</Typography>
             <Box display="flex" gap={2} mb={2}>
               <TextField
                 fullWidth
@@ -865,12 +860,12 @@ function AppContent() {
               ))}
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              💡 Las categorías con borde azul son predeterminadas y no se pueden eliminar
+              Las categorías con borde azul son predeterminadas y no se pueden eliminar
             </Typography>
           </Paper>
 
           <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
-            <Typography variant="h6" gutterBottom>💳 Gestión de Tarjetas</Typography>
+            <Typography variant="h6" gutterBottom>Gestión de Tarjetas</Typography>
             <Box display="flex" gap={2} mb={2}>
               <TextField
                 fullWidth
@@ -926,12 +921,12 @@ function AppContent() {
               ))}
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              💡 Las tarjetas con borde azul son predeterminadas y no se pueden eliminar
+              Las tarjetas con borde azul son predeterminadas y no se pueden eliminar
             </Typography>
           </Paper>
 
           <Paper sx={{ p: 3, bgcolor: '#fff', color: '#222' }}>
-            <Typography variant="h6" gutterBottom>🗂️ Datos de la aplicación</Typography>
+            <Typography variant="h6" gutterBottom>Datos de la aplicación</Typography>
             <Box display="flex" gap={2} flexWrap="wrap">
               <Button
                 variant="outlined"
@@ -945,7 +940,7 @@ function AppContent() {
                   }
                 }}
               >
-                🗑️ Borrar todos los datos
+                Borrar todos los datos
               </Button>
               <Button
                 variant="outlined"
@@ -964,7 +959,7 @@ function AppContent() {
                   link.click();
                 }}
               >
-                📥 Exportar datos
+                Exportar datos
               </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -1007,7 +1002,7 @@ function AppContent() {
             onClick={(e) => e.stopPropagation()}
           >
             <Typography variant="h6" gutterBottom>
-              {editandoId ? '✏️ Editar transacción' : `➕ Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
+              {editandoId ? 'Editar transacción' : `Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
             </Typography>
             
             <Box sx={{ mb: 2 }}>
@@ -1029,8 +1024,8 @@ function AppContent() {
                 onFocus={(e) => e.target.style.borderColor = '#1976d2'}
                 onBlur={(e) => e.target.style.borderColor = '#ccc'}
               >
-                <option value="gasto">💸 Gasto</option>
-                <option value="ingreso">💰 Ingreso</option>
+                <option value="gasto">Gasto</option>
+                <option value="ingreso">Ingreso</option>
               </select>
             </Box>
             
