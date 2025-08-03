@@ -26,7 +26,6 @@ app-portable/
 *.tmp
 *.temp
 test.html
-src/App-backup.tsx
 src/App-complex.tsx
 src/App-simple.tsx
 src/App-test.tsx
