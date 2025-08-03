@@ -20,12 +20,15 @@ type Transaccion = {
   categoria?: string;
   cuotas?: number;
   cuotaNro?: number;
+  mesInicio?: string;
 };
 
 const tarjetas = ['Visa', 'Mastercard', 'Amex'];
 const categoriasBase = ['Comida', 'Servicios', 'Ocio', 'Transporte', 'Salud', 'Salario', 'Freelance', 'Otros'];
 
 function AppContent() {
+  // ...existing code...
+  const [filtroMesPendiente, setFiltroMesPendiente] = useState<string>('');
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
   const [descripcion, setDescripcion] = useState('');
   const [monto, setMonto] = useState('');
@@ -39,7 +42,11 @@ function AppContent() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [categorias, setCategorias] = useState<string[]>(categoriasBase);
   const [tarjetasPersonalizadas, setTarjetasPersonalizadas] = useState<string[]>(tarjetas);
-  
+
+  // Estados para cuotas y mes de inicio
+  const [cuotas, setCuotas] = useState<number | ''>('');
+  const [mesInicio, setMesInicio] = useState<string>('');
+
   // Estados para nuevas funcionalidades
   const [busqueda, setBusqueda] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
@@ -122,18 +129,24 @@ function AppContent() {
       alert('Completa todos los campos obligatorios');
       return;
     }
+    const cuotasValue = esFuturo && cuotas ? Number(cuotas) : undefined;
+    const mesInicioValue = esFuturo && mesInicio ? mesInicio : undefined;
     if (editandoId) {
       setTransacciones(transacciones.map(t => t.id === editandoId ? {
         ...t, descripcion, monto: parseFloat(monto), fecha, tipo, esFuturo,
         tarjeta: esFuturo && tarjeta ? tarjeta : undefined,
-        categoria: categoria || undefined
+        categoria: categoria || undefined,
+        cuotas: cuotasValue,
+        mesInicio: mesInicioValue
       } : t));
       alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} editado`);
     } else {
       setTransacciones([...transacciones, {
         id: Date.now(), descripcion, monto: parseFloat(monto), fecha, tipo, esFuturo,
         tarjeta: esFuturo && tarjeta ? tarjeta : undefined,
-        categoria: categoria || undefined
+        categoria: categoria || undefined,
+        cuotas: cuotasValue,
+        mesInicio: mesInicioValue
       }]);
       alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`);
     }
@@ -150,6 +163,8 @@ function AppContent() {
     setTarjeta(''); 
     setCategoria(''); 
     setEditandoId(null);
+    setCuotas('');
+    setMesInicio('');
   };
 
   const abrirDialogoNuevo = (tipoTransaccion: TipoTransaccion) => {
@@ -319,7 +334,7 @@ function AppContent() {
     { id: 1, label: 'Gráficos', icon: <BarChart /> },
     { id: 2, label: 'Movimientos', icon: <SearchOutlined /> },
     { id: 3, label: 'Calendario', icon: <CalendarMonth /> },
-    { id: 4, label: 'Futuros', icon: <AutoGraph /> },
+    { id: 4, label: 'Pendientes', icon: <AutoGraph /> },
     { id: 5, label: 'Configuración', icon: <Settings /> },
   ];
 
@@ -831,7 +846,7 @@ function AppContent() {
                             {t.descripcion}
                           </Typography>
                           {t.esFuturo && (
-                            <Chip label="Futuro" variant="outlined" size="small" />
+                            <Chip label="Pendiente" variant="outlined" size="small" />
                           )}
                         </Box>
                       }
@@ -975,19 +990,36 @@ function AppContent() {
         </Box>
       )}
 
-      {/* Tab de Futuros */}
+      {/* Tab de Pendientes */}
       {tab === 4 && (
         <Paper sx={{ p: 2, bgcolor: '#fff', color: '#222' }}>
-          <Typography variant="h6">Transacciones futuras</Typography>
-          <List>
-            {transacciones.filter(t => t.esFuturo).length === 0 && (
-              <ListItem><ListItemText primary="No hay transacciones futuras." /></ListItem>
+          <Typography variant="h6">Transacciones pendientes</Typography>
+          <Box sx={{ mb: 2, display: 'flex', gap: 2, alignItems: 'center' }}>
+            <TextField
+              label="Filtrar por mes"
+              type="month"
+              value={filtroMesPendiente || ''}
+              onChange={e => setFiltroMesPendiente(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              sx={{ minWidth: 180 }}
+            />
+            {filtroMesPendiente && (
+              <Button size="small" onClick={() => setFiltroMesPendiente('')}>Limpiar filtro</Button>
             )}
-            {transacciones.filter(t => t.esFuturo).map(t => (
+          </Box>
+          <List>
+            {transacciones.filter(t => t.esFuturo && (
+              !filtroMesPendiente || (t.mesInicio && t.mesInicio.startsWith(filtroMesPendiente)) || (!t.mesInicio && t.fecha.startsWith(filtroMesPendiente))
+            )).length === 0 && (
+              <ListItem><ListItemText primary="No hay transacciones pendientes." /></ListItem>
+            )}
+            {transacciones.filter(t => t.esFuturo && (
+              !filtroMesPendiente || (t.mesInicio && t.mesInicio.startsWith(filtroMesPendiente)) || (!t.mesInicio && t.fecha.startsWith(filtroMesPendiente))
+            )).map(t => (
               <ListItem key={t.id} divider>
                 <ListItemText 
                   primary={`${t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}: ${t.descripcion}`} 
-                  secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.tarjeta ? ` — ${t.tarjeta}` : ''}${t.categoria ? ` — ${t.categoria}` : ''}`} 
+                  secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.tarjeta ? ` — ${t.tarjeta}` : ''}${t.categoria ? ` — ${t.categoria}` : ''}${t.cuotas ? ` — ${t.cuotas} cuotas` : ''}${t.mesInicio ? ` — Desde: ${t.mesInicio}` : ''}`} 
                 />
                 <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
                 <IconButton onClick={()=>handleEliminar(t.id)}><Delete /></IconButton>
@@ -1231,167 +1263,166 @@ function AppContent() {
       )}
 
       {/* Modal con Dialog de Material-UI */}
+
       <Dialog
         open={dialogOpen}
         onClose={() => {
           setDialogOpen(false);
           limpiarFormulario();
         }}
-        maxWidth="sm"
+        maxWidth="xs"
         fullWidth
         PaperProps={{
           sx: {
-            p: 3,
-            maxWidth: 500,
-            width: '90%',
-            maxHeight: '80vh',
-            overflow: 'auto',
+            p: 0,
+            borderRadius: 4,
+            boxShadow: 8,
+            overflow: 'hidden',
+            maxWidth: 400,
+            width: '100%',
+            bgcolor: '#f8fafc',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
           }
         }}
       >
-        <Typography variant="h6" gutterBottom>
-          {editandoId ? 'Editar transacción' : `Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
-        </Typography>
-        <TextField
-          select
-          fullWidth
-          label="Tipo"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoTransaccion)}
-          sx={{ mb: 2 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
-          }}
-          InputLabelProps={{
-            shrink: true
-          }}
-        >
-          <option value="gasto">Gasto</option>
-          <option value="ingreso">Ingreso</option>
-        </TextField>
-        <TextField 
-          fullWidth 
-          label="Descripción" 
-          value={descripcion} 
-          onChange={e => setDescripcion(e.target.value)} 
-          sx={{ mb: 2 }} 
-          autoFocus
-        />
-        <TextField 
-          fullWidth 
-          label="Monto" 
-          type="number" 
-          value={monto} 
-          onChange={e => setMonto(e.target.value)} 
-          sx={{ mb: 2 }} 
-        />
-        <TextField 
-          fullWidth 
-          label="Fecha" 
-          type="date" 
-          value={fecha} 
-          onChange={e => setFecha(e.target.value)} 
-          sx={{ mb: 2 }} 
-          InputLabelProps={{ shrink: true }} 
-        />
-        <TextField
-          select
-          fullWidth
-          label="¿Es futuro?"
-          value={esFuturo ? 'si' : 'no'}
-          onChange={(e) => setEsFuturo(e.target.value === 'si')}
-          sx={{ mb: 2 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
-          }}
-          InputLabelProps={{
-            shrink: true
-          }}
-        >
-          <option value="no">No</option>
-          <option value="si">Sí</option>
-        </TextField>
-        {esFuturo && (
+        <Box sx={{ p: 3, pb: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', bgcolor: tipo === 'gasto' ? '#ffeaea' : '#e8f5e9', flexShrink: 0 }}>
+          <Box sx={{
+            width: 64, height: 64, borderRadius: '50%',
+            bgcolor: tipo === 'gasto' ? '#ff5252' : '#43a047',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 1.5
+          }}>
+            {tipo === 'gasto' ? <TrendingDown sx={{ color: '#fff', fontSize: 36 }} /> : <TrendingUp sx={{ color: '#fff', fontSize: 36 }} />}
+          </Box>
+          <Typography variant="h5" fontWeight={700} color={tipo === 'gasto' ? '#d32f2f' : '#2e7d32'} gutterBottom>
+            {editandoId ? 'Editar transacción' : tipo === 'gasto' ? 'Nuevo Gasto' : 'Nuevo Ingreso'}
+          </Typography>
+        </Box>
+        <Box sx={{ p: 3, pt: 2, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {/* El campo 'Tipo' fue eliminado, el tipo se define al abrir el diálogo */}
+          <TextField
+            fullWidth
+            label="Descripción"
+            value={descripcion}
+            onChange={e => setDescripcion(e.target.value)}
+            sx={{ mb: 2 }}
+            autoFocus
+          />
+          <TextField
+            fullWidth
+            label="Monto"
+            type="number"
+            value={monto}
+            onChange={e => setMonto(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: <Box sx={{ color: tipo === 'gasto' ? '#d32f2f' : '#2e7d32', fontWeight: 700, pr: 1 }}>$</Box>
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Fecha"
+            type="date"
+            value={fecha}
+            onChange={e => setFecha(e.target.value)}
+            sx={{ mb: 2 }}
+            InputLabelProps={{ shrink: true }}
+          />
           <TextField
             select
             fullWidth
-            label="Tarjeta (opcional)"
-            value={tarjeta}
-            onChange={(e) => setTarjeta(e.target.value)}
+            label="¿Es pendiente?"
+            value={esFuturo ? 'si' : 'no'}
+            onChange={(e) => setEsFuturo(e.target.value === 'si')}
             sx={{ mb: 2 }}
-            SelectProps={{
-              native: true,
-              sx: { 
-                paddingTop: '8px',
-                '& option': {
-                  backgroundColor: 'white',
-                  color: 'black'
-                }
-              }
-            }}
-            InputLabelProps={{
-              shrink: true
-            }}
+            SelectProps={{ native: true }}
+            InputLabelProps={{ shrink: true }}
           >
-            <option value="">Sin tarjeta</option>
-            {tarjetasPersonalizadas.map(t => (
-              <option key={t} value={t}>{t}</option>
+            <option value="no">No</option>
+            <option value="si">Sí</option>
+          </TextField>
+          {esFuturo && (
+            <>
+              <TextField
+                select
+                fullWidth
+                label="Tarjeta (opcional)"
+                value={tarjeta}
+                onChange={(e) => setTarjeta(e.target.value)}
+                sx={{ mb: 2 }}
+                SelectProps={{ native: true }}
+                InputLabelProps={{ shrink: true }}
+              >
+                <option value="">Sin tarjeta</option>
+                {tarjetasPersonalizadas.map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </TextField>
+              <TextField
+                fullWidth
+                label="Cantidad de cuotas"
+                type="number"
+                value={cuotas || ''}
+                onChange={e => setCuotas(Number(e.target.value))}
+                sx={{ mb: 2 }}
+                inputProps={{ min: 1 }}
+              />
+              <TextField
+                fullWidth
+                label="Mes de inicio"
+                type="month"
+                value={mesInicio || ''}
+                onChange={e => setMesInicio(e.target.value)}
+                sx={{ mb: 2 }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </>
+          )}
+          <TextField
+            select
+            fullWidth
+            label="Categoría"
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            sx={{ mb: 3 }}
+            SelectProps={{ native: true }}
+            InputLabelProps={{ shrink: true }}
+          >
+            <option value="">Sin categoría</option>
+            {categorias.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
             ))}
           </TextField>
-        )}
-        <TextField
-          select
-          fullWidth
-          label="Categoría"
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          sx={{ mb: 3 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
-          }}
-          InputLabelProps={{
-            shrink: true
-          }}
-        >
-          <option value="">Sin categoría</option>
-          {categorias.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </TextField>
-        <Box display="flex" gap={2} justifyContent="flex-end">
-          <Button 
-            variant="outlined" 
-            onClick={() => {
-              setDialogOpen(false); 
-              limpiarFormulario();
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button variant="contained" onClick={handleAgregar}>
-            {editandoId ? 'Guardar' : 'Agregar'}
-          </Button>
+          <Box display="flex" gap={2} justifyContent="flex-end" mt={2}>
+            <Button
+              variant="outlined"
+              color="inherit"
+              onClick={() => {
+                setDialogOpen(false);
+                limpiarFormulario();
+              }}
+              sx={{ minWidth: 120, borderRadius: 2 }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleAgregar}
+              sx={{
+                minWidth: 120,
+                borderRadius: 2,
+                bgcolor: tipo === 'gasto' ? '#ff5252' : '#43a047',
+                color: '#fff',
+                fontWeight: 700,
+                '&:hover': {
+                  bgcolor: tipo === 'gasto' ? '#d32f2f' : '#2e7d32',
+                }
+              }}
+            >
+              {editandoId ? 'Guardar' : 'Agregar'}
+            </Button>
+          </Box>
         </Box>
       </Dialog>
       </Container>
