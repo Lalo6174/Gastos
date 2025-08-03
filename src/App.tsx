@@ -1124,7 +1124,7 @@ function AppContent() {
 
           <Paper sx={{ p: 3, bgcolor: '#fff', color: '#222' }}>
             <Typography variant="h6" gutterBottom>Datos de la aplicación</Typography>
-            <Box display="flex" gap={2} flexWrap="wrap">
+            <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
               <Button
                 variant="outlined"
                 color="warning"
@@ -1141,7 +1141,7 @@ function AppContent() {
               </Button>
               <Button
                 variant="outlined"
-                onClick={() => {
+                onClick={async () => {
                   const data = {
                     transacciones,
                     categorias,
@@ -1149,14 +1149,76 @@ function AppContent() {
                   };
                   const dataStr = JSON.stringify(data, null, 2);
                   const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                  const url = URL.createObjectURL(dataBlob);
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.download = 'gastos-backup.json';
-                  link.click();
+                  // Soporte para showSaveFilePicker (moderno, Electron y navegadores compatibles)
+                  // Fallback a descarga automática si no está disponible
+                  const win = window as any;
+                  if (typeof win.showSaveFilePicker === 'function') {
+                    try {
+                      const handle = await win.showSaveFilePicker({
+                        suggestedName: 'gastos-backup.json',
+                        types: [
+                          {
+                            description: 'Archivo JSON',
+                            accept: { 'application/json': ['.json'] }
+                          }
+                        ]
+                      });
+                      const writable = await handle.createWritable();
+                      await writable.write(dataStr);
+                      await writable.close();
+                      alert('Backup exportado correctamente.');
+                    } catch (err) {
+                      if (err && typeof err === 'object' && err !== null && 'name' in err && (err as any).name !== 'AbortError') {
+                        alert('Error al exportar el archivo.');
+                      }
+                    }
+                  } else {
+                    const url = URL.createObjectURL(dataBlob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'gastos-backup.json';
+                    link.click();
+                  }
                 }}
               >
                 Exportar datos
+              </Button>
+              <Button
+                variant="outlined"
+                component="label"
+              >
+                Importar datos
+                <input
+                  type="file"
+                  accept="application/json"
+                  hidden
+                  onChange={async (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    try {
+                      const text = await file.text();
+                      const data = JSON.parse(text);
+                      if (!data.transacciones || !data.categorias || !data.tarjetas) {
+                        alert('El archivo no tiene el formato esperado.');
+                        return;
+                      }
+                      if (!Array.isArray(data.transacciones) || !Array.isArray(data.categorias) || !Array.isArray(data.tarjetas)) {
+                        alert('El archivo no tiene el formato esperado.');
+                        return;
+                      }
+                      if (!confirm('¿Seguro que quieres importar estos datos? Esto reemplazará los datos actuales.')) return;
+                      setTransacciones(data.transacciones);
+                      setCategorias(data.categorias);
+                      setTarjetasPersonalizadas(data.tarjetas);
+                      localStorage.setItem('transacciones-gastos', JSON.stringify(data.transacciones));
+                      localStorage.setItem('categorias-gastos', JSON.stringify(data.categorias));
+                      localStorage.setItem('tarjetas-gastos', JSON.stringify(data.tarjetas));
+                      alert('Datos importados correctamente.');
+                    } catch (err) {
+                      alert('Error al importar el archivo.');
+                    }
+                  }}
+                />
               </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
