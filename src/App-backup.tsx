@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Card, CardContent, Chip, ListItemIcon, Dialog } from '@mui/material';
-import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, BarChart, SearchOutlined, CalendarMonth, AutoGraph, Settings } from '@mui/icons-material';
+import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Card, CardContent, Chip, ListItemIcon } from '@mui/material';
+import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, BarChart, SearchOutlined, CalendarMonth, MoneyOff, AttachMoney, AutoGraph, Settings } from '@mui/icons-material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
@@ -42,12 +42,8 @@ function AppContent() {
   
   // Estados para nuevas funcionalidades
   const [busqueda, setBusqueda] = useState('');
-  const [fechaDesde, setFechaDesde] = useState('');
-  const [fechaHasta, setFechaHasta] = useState('');
+  const [fechaFiltro, setFechaFiltro] = useState('');
   const [categoriaFiltro, setCategoriaFiltro] = useState('');
-  const [filtroTipo, setFiltroTipo] = useState('');
-  const [filtroTemporal, setFiltroTemporal] = useState('');
-  const [ordenamiento, setOrdenamiento] = useState('fecha-desc');
   const [mesSeleccionado, setMesSeleccionado] = useState(new Date());
   const [vistaCalendario, setVistaCalendario] = useState<'mes' | 'semana'>('mes');
 
@@ -183,47 +179,19 @@ function AppContent() {
   const balanceActual = ingresosActuales - gastosActuales;
   const balanceFuturo = ingresosFuturos - gastosFuturos;
 
-  // Función para filtrar y ordenar transacciones
-  const filtrarYOrdenarTransacciones = (transaccionesArray: Transaccion[]) => {
-    let resultado = transaccionesArray.filter(t => {
+  // Función para filtrar transacciones
+  const filtrarTransacciones = (transaccionesArray: Transaccion[]) => {
+    return transaccionesArray.filter(t => {
       const coincideBusqueda = !busqueda || 
         t.descripcion.toLowerCase().includes(busqueda.toLowerCase()) ||
         (t.categoria && t.categoria.toLowerCase().includes(busqueda.toLowerCase())) ||
         (t.tarjeta && t.tarjeta.toLowerCase().includes(busqueda.toLowerCase()));
       
-      // Filtro por rango de fechas
-      const fechaTransaccion = new Date(t.fecha);
-      const coincideFechaDesde = !fechaDesde || fechaTransaccion >= new Date(fechaDesde);
-      const coincideFechaHasta = !fechaHasta || fechaTransaccion <= new Date(fechaHasta);
-      
+      const coincideFecha = !fechaFiltro || t.fecha === fechaFiltro;
       const coincideCategoria = !categoriaFiltro || t.categoria === categoriaFiltro;
-      const coincideTipo = !filtroTipo || t.tipo === filtroTipo;
-      const coincideTemporal = !filtroTemporal || 
-        (filtroTemporal === 'actual' && !t.esFuturo) ||
-        (filtroTemporal === 'futuro' && t.esFuturo);
       
-      return coincideBusqueda && coincideFechaDesde && coincideFechaHasta && coincideCategoria && coincideTipo && coincideTemporal;
+      return coincideBusqueda && coincideFecha && coincideCategoria;
     });
-
-    // Aplicar ordenamiento
-    resultado.sort((a, b) => {
-      switch (ordenamiento) {
-        case 'fecha-desc':
-          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
-        case 'fecha-asc':
-          return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
-        case 'monto-desc':
-          return b.monto - a.monto;
-        case 'monto-asc':
-          return a.monto - b.monto;
-        case 'descripcion':
-          return a.descripcion.localeCompare(b.descripcion);
-        default:
-          return 0;
-      }
-    });
-
-    return resultado;
   };
 
   // Datos para gráficos
@@ -317,10 +285,12 @@ function AppContent() {
   const menuItems = [
     { id: 0, label: 'Dashboard', icon: <Dashboard /> },
     { id: 1, label: 'Gráficos', icon: <BarChart /> },
-    { id: 2, label: 'Movimientos', icon: <SearchOutlined /> },
+    { id: 2, label: 'Búsqueda', icon: <SearchOutlined /> },
     { id: 3, label: 'Calendario', icon: <CalendarMonth /> },
-    { id: 4, label: 'Futuros', icon: <AutoGraph /> },
-    { id: 5, label: 'Configuración', icon: <Settings /> },
+    { id: 4, label: 'Gastos', icon: <MoneyOff /> },
+    { id: 5, label: 'Ingresos', icon: <AttachMoney /> },
+    { id: 6, label: 'Futuros', icon: <AutoGraph /> },
+    { id: 7, label: 'Configuración', icon: <Settings /> },
   ];
 
   return (
@@ -368,7 +338,12 @@ function AppContent() {
                 {item.icon}
               </ListItemIcon>
               <ListItemText 
-                primary={item.label}
+                primary={
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {item.icon}
+                    <span>{item.label}</span>
+                  </Box>
+                }
               />
             </ListItem>
           ))}
@@ -386,8 +361,8 @@ function AppContent() {
       <Box sx={{ flex: 1, ml: '280px' }}>
         <Container maxWidth="lg" sx={{ py: 4 }}>
 
-          {/* Dashboard Principal */}
-          {tab === 0 && (
+      {/* Dashboard Principal */}
+      {tab === 0 && (
         <>
           <Box display="flex" gap={2} mb={3} flexWrap="wrap">
             <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#e8f5e8', color: '#2e7d32' }}>
@@ -528,217 +503,84 @@ function AppContent() {
         </Box>
       )}
 
-      {/* Tab de Movimientos */}
+      {/* Tab de Búsqueda */}
       {tab === 2 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-            Historial de Movimientos
+            Búsqueda y Filtros
           </Typography>
           
-          {/* Panel de filtros */}
           <Paper sx={{ p: 3, mb: 3 }}>
-            <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-              Filtros de búsqueda
-            </Typography>
-            
-            {/* Primera fila de filtros */}
-            <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2} mb={3}>
+            <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2}>
               <TextField
                 fullWidth
-                label="Buscar movimientos"
+                label="Buscar transacciones"
                 placeholder="Descripción, categoría o tarjeta..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
                 InputProps={{
                   startAdornment: <Search sx={{ mr: 1, color: 'action.active' }} />
                 }}
-                sx={{ flex: 2 }}
               />
               <TextField
-                select
-                label="Filtrar por categoría"
-                value={categoriaFiltro}
-                onChange={(e) => setCategoriaFiltro(e.target.value)}
-                sx={{ flex: 1, minWidth: { xs: '100%', md: '200px' } }}
-                SelectProps={{
-                  native: true,
-                  sx: { 
-                    paddingTop: '8px',
-                    '& option': {
-                      backgroundColor: 'white',
-                      color: 'black'
-                    }
-                  }
-                }}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              >
-                <option value="">Todas las categorías</option>
-                {categorias.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </TextField>
-            </Box>
-
-            {/* Segunda fila - Rango de fechas */}
-            <Box mb={3}>
-              <Typography variant="body2" sx={{ mb: 2, color: '#666', fontWeight: 600 }}>
-                Rango de fechas
-              </Typography>
-              <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2} alignItems={{ sm: 'center' }}>
-                <TextField
-                  label="Fecha desde"
-                  type="date"
-                  value={fechaDesde}
-                  onChange={(e) => setFechaDesde(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ flex: 1 }}
-                />
-                <Typography variant="body2" sx={{ color: '#666', px: 1, display: { xs: 'none', sm: 'block' } }}>
-                  hasta
-                </Typography>
-                <TextField
-                  label="Fecha hasta"
-                  type="date"
-                  value={fechaHasta}
-                  onChange={(e) => setFechaHasta(e.target.value)}
-                  InputLabelProps={{ shrink: true }}
-                  sx={{ flex: 1 }}
-                />
-                {(fechaDesde || fechaHasta) && (
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => {
-                      setFechaDesde('');
-                      setFechaHasta('');
-                    }}
-                    sx={{ minWidth: 'auto', px: 2 }}
-                  >
-                    Limpiar fechas
-                  </Button>
-                )}
+                fullWidth
+                label="Filtrar por fecha"
+                type="date"
+                value={fechaFiltro}
+                onChange={(e) => setFechaFiltro(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+              <Box sx={{ minWidth: { xs: '100%', md: '33%' } }}>
+                <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Filtrar por categoría</Typography>
+                <select 
+                  style={{ 
+                    width: '100%', 
+                    padding: '16.5px 14px', 
+                    border: '1px solid #ccc', 
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#fff',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  value={categoriaFiltro}
+                  onChange={(e) => setCategoriaFiltro(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                  onBlur={(e) => e.target.style.borderColor = '#ccc'}
+                >
+                  <option value="">Todas las categorías</option>
+                  {categorias.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
               </Box>
-              <Typography variant="caption" sx={{ color: '#888', mt: 1, display: 'block' }}>
-                Deja vacío "desde" para buscar desde el inicio, o "hasta" para buscar hasta el final
-              </Typography>
-            </Box>
-
-            {/* Tercera fila - Filtros adicionales */}
-            <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={2} mb={3}>
-              <TextField
-                select
-                label="Tipo de movimiento"
-                value={filtroTipo}
-                onChange={(e) => setFiltroTipo(e.target.value)}
-                sx={{ flex: 1 }}
-                SelectProps={{
-                  native: true,
-                  sx: { 
-                    paddingTop: '8px',
-                    '& option': {
-                      backgroundColor: 'white',
-                      color: 'black'
-                    }
-                  }
-                }}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              >
-                <option value="">Todos los tipos</option>
-                <option value="gasto">Solo gastos</option>
-                <option value="ingreso">Solo ingresos</option>
-              </TextField>
-              <TextField
-                select
-                label="Estado temporal"
-                value={filtroTemporal}
-                onChange={(e) => setFiltroTemporal(e.target.value)}
-                sx={{ flex: 1 }}
-                SelectProps={{
-                  native: true,
-                  sx: { 
-                    paddingTop: '8px',
-                    '& option': {
-                      backgroundColor: 'white',
-                      color: 'black'
-                    }
-                  }
-                }}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              >
-                <option value="">Todos</option>
-                <option value="actual">Solo actuales</option>
-                <option value="futuro">Solo futuros</option>
-              </TextField>
-              <TextField
-                select
-                label="Ordenar por"
-                value={ordenamiento}
-                onChange={(e) => setOrdenamiento(e.target.value)}
-                sx={{ flex: 1 }}
-                SelectProps={{
-                  native: true,
-                  sx: { 
-                    paddingTop: '8px',
-                    '& option': {
-                      backgroundColor: 'white',
-                      color: 'black'
-                    }
-                  }
-                }}
-                InputLabelProps={{
-                  shrink: true
-                }}
-              >
-                <option value="fecha-desc">Fecha (más reciente)</option>
-                <option value="fecha-asc">Fecha (más antigua)</option>
-                <option value="monto-desc">Monto (mayor a menor)</option>
-                <option value="monto-asc">Monto (menor a mayor)</option>
-                <option value="descripcion">Descripción (A-Z)</option>
-              </TextField>
             </Box>
             
-            {/* Filtros activos y botón limpiar */}
-            <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
+            <Box mt={2} display="flex" gap={1} flexWrap="wrap">
               <Button 
                 variant="outlined" 
                 size="small" 
                 onClick={() => {
                   setBusqueda('');
-                  setFechaDesde('');
-                  setFechaHasta('');
+                  setFechaFiltro('');
                   setCategoriaFiltro('');
-                  setFiltroTipo('');
-                  setFiltroTemporal('');
-                  setOrdenamiento('fecha-desc');
                 }}
               >
-                Limpiar todos los filtros
+                Limpiar filtros
               </Button>
               {busqueda && (
                 <Chip 
                   label={`Búsqueda: "${busqueda}"`} 
                   onDelete={() => setBusqueda('')} 
                   size="small" 
-                  color="primary"
-                  variant="outlined"
                 />
               )}
-              {(fechaDesde || fechaHasta) && (
+              {fechaFiltro && (
                 <Chip 
-                  label={`Fechas: ${fechaDesde || '∞'} - ${fechaHasta || '∞'}`} 
-                  onDelete={() => {
-                    setFechaDesde('');
-                    setFechaHasta('');
-                  }} 
+                  label={`Fecha: ${fechaFiltro}`} 
+                  onDelete={() => setFechaFiltro('')} 
                   size="small" 
-                  color="primary"
-                  variant="outlined"
                 />
               )}
               {categoriaFiltro && (
@@ -746,116 +588,38 @@ function AppContent() {
                   label={`Categoría: ${categoriaFiltro}`} 
                   onDelete={() => setCategoriaFiltro('')} 
                   size="small" 
-                  color="primary"
-                  variant="outlined"
-                />
-              )}
-              {filtroTipo && (
-                <Chip 
-                  label={`Tipo: ${filtroTipo === 'gasto' ? 'Gastos' : 'Ingresos'}`} 
-                  onDelete={() => setFiltroTipo('')} 
-                  size="small" 
-                  color="primary"
-                  variant="outlined"
-                />
-              )}
-              {filtroTemporal && (
-                <Chip 
-                  label={`Estado: ${filtroTemporal === 'actual' ? 'Actuales' : 'Futuros'}`} 
-                  onDelete={() => setFiltroTemporal('')} 
-                  size="small" 
-                  color="primary"
-                  variant="outlined"
                 />
               )}
             </Box>
           </Paper>
 
-          {/* Lista de movimientos */}
           <Paper sx={{ p: 3 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">
-                Resultados ({filtrarYOrdenarTransacciones(transacciones).length} movimientos)
-              </Typography>
-              <Box display="flex" gap={1}>
-                <Button 
-                  variant="contained" 
-                  color="success" 
-                  size="small"
-                  startIcon={<Add />} 
-                  onClick={() => abrirDialogoNuevo('ingreso')}
-                >
-                  Nuevo Ingreso
-                </Button>
-                <Button 
-                  variant="contained" 
-                  color="error" 
-                  size="small"
-                  startIcon={<Add />} 
-                  onClick={() => abrirDialogoNuevo('gasto')}
-                >
-                  Nuevo Gasto
-                </Button>
-              </Box>
-            </Box>
-            
+            <Typography variant="h6" gutterBottom>
+              Resultados ({filtrarTransacciones(transacciones).length} transacciones)
+            </Typography>
             <List>
-              {filtrarYOrdenarTransacciones(transacciones).length === 0 ? (
+              {filtrarTransacciones(transacciones).length === 0 ? (
                 <ListItem>
-                  <ListItemText 
-                    primary="No se encontraron movimientos con los filtros aplicados." 
-                    secondary="Prueba ajustando los criterios de búsqueda."
-                  />
+                  <ListItemText primary="No se encontraron transacciones con los filtros aplicados." />
                 </ListItem>
               ) : (
-                filtrarYOrdenarTransacciones(transacciones).map(t => (
-                  <ListItem 
-                    key={t.id} 
-                    divider
-                    sx={{
-                      borderLeft: `4px solid ${t.tipo === 'gasto' ? '#f44336' : '#4caf50'}`,
-                      '&:hover': {
-                        bgcolor: '#f5f5f5'
-                      }
-                    }}
-                  >
+                filtrarTransacciones(transacciones).map(t => (
+                  <ListItem key={t.id} divider>
                     <ListItemText 
-                      primary={
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Chip
-                            label={t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}
-                            color={t.tipo === 'gasto' ? 'error' : 'success'}
-                            size="small"
-                          />
-                          <Typography variant="subtitle1" component="span">
-                            {t.descripcion}
-                          </Typography>
-                          {t.esFuturo && (
-                            <Chip label="Futuro" variant="outlined" size="small" />
-                          )}
-                        </Box>
-                      }
+                      primary={`${t.tipo === 'gasto' ? 'Gasto' : 'Ingreso'}: ${t.descripcion}`} 
                       secondary={
                         <Box>
-                          <Typography variant="body2" color="text.primary">
-                            <strong>${t.monto.toFixed(2)}</strong> — {t.fecha}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {t.categoria && `${t.categoria}`}
-                            {t.categoria && t.tarjeta && ' • '}
-                            {t.tarjeta && `${t.tarjeta}`}
+                          <Typography variant="body2">
+                            ${t.monto.toFixed(2)} — {t.fecha}
+                            {t.categoria && ` — ${t.categoria}`}
+                            {t.tarjeta && ` — ${t.tarjeta}`}
+                            {t.esFuturo && ' — Futuro'}
                           </Typography>
                         </Box>
                       }
                     />
-                    <Box display="flex" gap={1}>
-                      <IconButton onClick={() => handleEditar(t)} size="small">
-                        <Edit />
-                      </IconButton>
-                      <IconButton onClick={() => handleEliminar(t.id)} size="small">
-                        <Delete />
-                      </IconButton>
-                    </Box>
+                    <IconButton onClick={() => handleEditar(t)}><Edit /></IconButton>
+                    <IconButton onClick={() => handleEliminar(t.id)}><Delete /></IconButton>
                   </ListItem>
                 ))
               )}
@@ -975,8 +739,52 @@ function AppContent() {
         </Box>
       )}
 
-      {/* Tab de Futuros */}
+      {/* Tab de Gastos */}
       {tab === 4 && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff', color: '#222' }}>
+          <Typography variant="h6">Gastos actuales</Typography>
+          <List>
+            {transacciones.filter(t => t.tipo === 'gasto' && !t.esFuturo).length === 0 && (
+              <ListItem><ListItemText primary="No hay gastos actuales." /></ListItem>
+            )}
+            {transacciones.filter(t => t.tipo === 'gasto' && !t.esFuturo).map(t => (
+              <ListItem key={t.id} divider>
+                <ListItemText 
+                  primary={`Gasto: ${t.descripcion}`} 
+                  secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.categoria ? ` — ${t.categoria}` : ''}`} 
+                />
+                <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
+                <IconButton onClick={()=>handleEliminar(t.id)}><Delete /></IconButton>
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
+
+      {/* Tab de Ingresos */}
+      {tab === 5 && (
+        <Paper sx={{ p: 2, mb: 2, bgcolor: '#fff', color: '#222' }}>
+          <Typography variant="h6">Ingresos actuales</Typography>
+          <List>
+            {transacciones.filter(t => t.tipo === 'ingreso' && !t.esFuturo).length === 0 && (
+              <ListItem><ListItemText primary="No hay ingresos actuales." /></ListItem>
+            )}
+            {transacciones.filter(t => t.tipo === 'ingreso' && !t.esFuturo).map(t => (
+              <ListItem key={t.id} divider>
+                <ListItemText 
+                  primary={`Ingreso: ${t.descripcion}`} 
+                  secondary={`$${t.monto.toFixed(2)} — ${t.fecha}${t.categoria ? ` — ${t.categoria}` : ''}`} 
+                />
+                <IconButton onClick={()=>handleEditar(t)}><Edit /></IconButton>
+                <IconButton onClick={()=>handleEliminar(t.id)}><Delete /></IconButton>
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
+
+      {/* Tab de Futuros */}
+      {tab === 6 && (
         <Paper sx={{ p: 2, bgcolor: '#fff', color: '#222' }}>
           <Typography variant="h6">Transacciones futuras</Typography>
           <List>
@@ -998,7 +806,7 @@ function AppContent() {
       )}
 
       {/* Tab de Configuración */}
-      {tab === 5 && (
+      {tab === 7 && (
         <Box>
           <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
             <Typography variant="h6" gutterBottom>Gestión de Categorías</Typography>
@@ -1124,7 +932,7 @@ function AppContent() {
 
           <Paper sx={{ p: 3, bgcolor: '#fff', color: '#222' }}>
             <Typography variant="h6" gutterBottom>Datos de la aplicación</Typography>
-            <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
+            <Box display="flex" gap={2} flexWrap="wrap">
               <Button
                 variant="outlined"
                 color="warning"
@@ -1141,7 +949,7 @@ function AppContent() {
               </Button>
               <Button
                 variant="outlined"
-                onClick={async () => {
+                onClick={() => {
                   const data = {
                     transacciones,
                     categorias,
@@ -1149,76 +957,14 @@ function AppContent() {
                   };
                   const dataStr = JSON.stringify(data, null, 2);
                   const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                  // Soporte para showSaveFilePicker (moderno, Electron y navegadores compatibles)
-                  // Fallback a descarga automática si no está disponible
-                  const win = window as any;
-                  if (typeof win.showSaveFilePicker === 'function') {
-                    try {
-                      const handle = await win.showSaveFilePicker({
-                        suggestedName: 'gastos-backup.json',
-                        types: [
-                          {
-                            description: 'Archivo JSON',
-                            accept: { 'application/json': ['.json'] }
-                          }
-                        ]
-                      });
-                      const writable = await handle.createWritable();
-                      await writable.write(dataStr);
-                      await writable.close();
-                      alert('Backup exportado correctamente.');
-                    } catch (err) {
-                      if (err && typeof err === 'object' && err !== null && 'name' in err && (err as any).name !== 'AbortError') {
-                        alert('Error al exportar el archivo.');
-                      }
-                    }
-                  } else {
-                    const url = URL.createObjectURL(dataBlob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'gastos-backup.json';
-                    link.click();
-                  }
+                  const url = URL.createObjectURL(dataBlob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'gastos-backup.json';
+                  link.click();
                 }}
               >
                 Exportar datos
-              </Button>
-              <Button
-                variant="outlined"
-                component="label"
-              >
-                Importar datos
-                <input
-                  type="file"
-                  accept="application/json"
-                  hidden
-                  onChange={async (e) => {
-                    const file = e.target.files && e.target.files[0];
-                    if (!file) return;
-                    try {
-                      const text = await file.text();
-                      const data = JSON.parse(text);
-                      if (!data.transacciones || !data.categorias || !data.tarjetas) {
-                        alert('El archivo no tiene el formato esperado.');
-                        return;
-                      }
-                      if (!Array.isArray(data.transacciones) || !Array.isArray(data.categorias) || !Array.isArray(data.tarjetas)) {
-                        alert('El archivo no tiene el formato esperado.');
-                        return;
-                      }
-                      if (!confirm('¿Seguro que quieres importar estos datos? Esto reemplazará los datos actuales.')) return;
-                      setTransacciones(data.transacciones);
-                      setCategorias(data.categorias);
-                      setTarjetasPersonalizadas(data.tarjetas);
-                      localStorage.setItem('transacciones-gastos', JSON.stringify(data.transacciones));
-                      localStorage.setItem('categorias-gastos', JSON.stringify(data.categorias));
-                      localStorage.setItem('tarjetas-gastos', JSON.stringify(data.tarjetas));
-                      alert('Datos importados correctamente.');
-                    } catch (err) {
-                      alert('Error al importar el archivo.');
-                    }
-                  }}
-                />
               </Button>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
@@ -1230,171 +976,188 @@ function AppContent() {
         </Box>
       )}
 
-      {/* Modal con Dialog de Material-UI */}
-      <Dialog
-        open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false);
-          limpiarFormulario();
-        }}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            p: 3,
-            maxWidth: 500,
-            width: '90%',
-            maxHeight: '80vh',
-            overflow: 'auto',
-          }
-        }}
-      >
-        <Typography variant="h6" gutterBottom>
-          {editandoId ? 'Editar transacción' : `Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
-        </Typography>
-        <TextField
-          select
-          fullWidth
-          label="Tipo"
-          value={tipo}
-          onChange={(e) => setTipo(e.target.value as TipoTransaccion)}
-          sx={{ mb: 2 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
+      {/* Modal personalizado en lugar de Dialog */}
+      {dialogOpen && (
+        <Box
+          sx={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
           }}
-          InputLabelProps={{
-            shrink: true
+          onClick={() => {
+            setDialogOpen(false);
+            limpiarFormulario();
           }}
         >
-          <option value="gasto">Gasto</option>
-          <option value="ingreso">Ingreso</option>
-        </TextField>
-        <TextField 
-          fullWidth 
-          label="Descripción" 
-          value={descripcion} 
-          onChange={e => setDescripcion(e.target.value)} 
-          sx={{ mb: 2 }} 
-          autoFocus
-        />
-        <TextField 
-          fullWidth 
-          label="Monto" 
-          type="number" 
-          value={monto} 
-          onChange={e => setMonto(e.target.value)} 
-          sx={{ mb: 2 }} 
-        />
-        <TextField 
-          fullWidth 
-          label="Fecha" 
-          type="date" 
-          value={fecha} 
-          onChange={e => setFecha(e.target.value)} 
-          sx={{ mb: 2 }} 
-          InputLabelProps={{ shrink: true }} 
-        />
-        <TextField
-          select
-          fullWidth
-          label="¿Es futuro?"
-          value={esFuturo ? 'si' : 'no'}
-          onChange={(e) => setEsFuturo(e.target.value === 'si')}
-          sx={{ mb: 2 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
-          }}
-          InputLabelProps={{
-            shrink: true
-          }}
-        >
-          <option value="no">No</option>
-          <option value="si">Sí</option>
-        </TextField>
-        {esFuturo && (
-          <TextField
-            select
-            fullWidth
-            label="Tarjeta (opcional)"
-            value={tarjeta}
-            onChange={(e) => setTarjeta(e.target.value)}
-            sx={{ mb: 2 }}
-            SelectProps={{
-              native: true,
-              sx: { 
-                paddingTop: '8px',
-                '& option': {
-                  backgroundColor: 'white',
-                  color: 'black'
-                }
-              }
+          <Paper
+            sx={{
+              p: 3,
+              maxWidth: 500,
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto',
             }}
-            InputLabelProps={{
-              shrink: true
-            }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <option value="">Sin tarjeta</option>
-            {tarjetasPersonalizadas.map(t => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </TextField>
-        )}
-        <TextField
-          select
-          fullWidth
-          label="Categoría"
-          value={categoria}
-          onChange={(e) => setCategoria(e.target.value)}
-          sx={{ mb: 3 }}
-          SelectProps={{
-            native: true,
-            sx: { 
-              paddingTop: '8px',
-              '& option': {
-                backgroundColor: 'white',
-                color: 'black'
-              }
-            }
-          }}
-          InputLabelProps={{
-            shrink: true
-          }}
-        >
-          <option value="">Sin categoría</option>
-          {categorias.map(cat => (
-            <option key={cat} value={cat}>{cat}</option>
-          ))}
-        </TextField>
-        <Box display="flex" gap={2} justifyContent="flex-end">
-          <Button 
-            variant="outlined" 
-            onClick={() => {
-              setDialogOpen(false); 
-              limpiarFormulario();
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button variant="contained" onClick={handleAgregar}>
-            {editandoId ? 'Guardar' : 'Agregar'}
-          </Button>
+            <Typography variant="h6" gutterBottom>
+              {editandoId ? 'Editar transacción' : `Nuevo ${tipo === 'gasto' ? 'gasto' : 'ingreso'}`}
+            </Typography>
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Tipo</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value as TipoTransaccion)}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
+              >
+                <option value="gasto">Gasto</option>
+                <option value="ingreso">Ingreso</option>
+              </select>
+            </Box>
+            
+            <TextField 
+              fullWidth 
+              label="Descripción" 
+              value={descripcion} 
+              onChange={e => setDescripcion(e.target.value)} 
+              sx={{ mb: 2 }} 
+              autoFocus
+            />
+            
+            <TextField 
+              fullWidth 
+              label="Monto" 
+              type="number" 
+              value={monto} 
+              onChange={e => setMonto(e.target.value)} 
+              sx={{ mb: 2 }} 
+            />
+            
+            <TextField 
+              fullWidth 
+              label="Fecha" 
+              type="date" 
+              value={fecha} 
+              onChange={e => setFecha(e.target.value)} 
+              sx={{ mb: 2 }} 
+              InputLabelProps={{ shrink: true }} 
+            />
+            
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>¿Es futuro?</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+                value={esFuturo ? 'si' : 'no'}
+                onChange={(e) => setEsFuturo(e.target.value === 'si')}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
+              >
+                <option value="no">No</option>
+                <option value="si">Sí</option>
+              </select>
+            </Box>
+            
+            {esFuturo && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Tarjeta (opcional)</Typography>
+                <select 
+                  style={{ 
+                    width: '100%', 
+                    padding: '16.5px 14px', 
+                    border: '1px solid #ccc', 
+                    borderRadius: '4px',
+                    fontSize: '16px',
+                    fontFamily: 'inherit',
+                    backgroundColor: '#fff',
+                    outline: 'none',
+                    transition: 'border-color 0.2s',
+                  }}
+                  value={tarjeta}
+                  onChange={(e) => setTarjeta(e.target.value)}
+                  onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                  onBlur={(e) => e.target.style.borderColor = '#ccc'}
+                >
+                  <option value="">Sin tarjeta</option>
+                  {tarjetasPersonalizadas.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              </Box>
+            )}
+            
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="body2" sx={{ mb: 1, color: '#666', fontSize: '0.875rem' }}>Categoría</Typography>
+              <select 
+                style={{ 
+                  width: '100%', 
+                  padding: '16.5px 14px', 
+                  border: '1px solid #ccc', 
+                  borderRadius: '4px',
+                  fontSize: '16px',
+                  fontFamily: 'inherit',
+                  backgroundColor: '#fff',
+                  outline: 'none',
+                  transition: 'border-color 0.2s',
+                }}
+                value={categoria}
+                onChange={(e) => setCategoria(e.target.value)}
+                onFocus={(e) => e.target.style.borderColor = '#1976d2'}
+                onBlur={(e) => e.target.style.borderColor = '#ccc'}
+              >
+                <option value="">Sin categoría</option>
+                {categorias.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </Box>
+            
+            <Box display="flex" gap={2} justifyContent="flex-end">
+              <Button 
+                variant="outlined" 
+                onClick={() => {
+                  setDialogOpen(false); 
+                  limpiarFormulario();
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button variant="contained" onClick={handleAgregar}>
+                {editandoId ? 'Guardar' : 'Agregar'}
+              </Button>
+            </Box>
+          </Paper>
         </Box>
-      </Dialog>
-      </Container>
+      )}
+        </Container>
       </Box>
     </Box>
   );
