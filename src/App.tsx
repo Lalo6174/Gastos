@@ -1219,25 +1219,23 @@ function AppContent() {
                   px: 2, 
                   py: 1, 
                   borderRadius: 1,
-                  border: categoriasBase.includes(cat) ? '2px solid #1976d2' : '1px solid #ccc'
+                  border: '1px solid #ccc'
                 }}>
                   <Typography variant="body2">{cat}</Typography>
-                  {!categoriasBase.includes(cat) && (
-                    <IconButton
-                      size="small"
-                      sx={{ ml: 1 }}
-                      onClick={() => {
-                        setCategorias(categorias.filter(c => c !== cat));
-                      }}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  )}
+                  <IconButton
+                    size="small"
+                    sx={{ ml: 1 }}
+                    onClick={() => {
+                      setCategorias(categorias.filter(c => c !== cat));
+                    }}
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
                 </Box>
               ))}
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Las categorías con borde azul son predeterminadas y no se pueden eliminar
+              Podés eliminar cualquier categoría, incluso las predeterminadas.
             </Typography>
           </Paper>
 
@@ -1280,25 +1278,23 @@ function AppContent() {
                   px: 2, 
                   py: 1, 
                   borderRadius: 1,
-                  border: tarjetas.includes(tarj) ? '2px solid #1976d2' : '1px solid #ccc'
+                  border: '1px solid #ccc'
                 }}>
                   <Typography variant="body2">{tarj}</Typography>
-                  {!tarjetas.includes(tarj) && (
-                    <IconButton
-                      size="small"
-                      sx={{ ml: 1 }}
-                      onClick={() => {
-                        setTarjetasPersonalizadas(tarjetasPersonalizadas.filter(t => t !== tarj));
-                      }}
-                    >
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  )}
+                  <IconButton
+                    size="small"
+                    sx={{ ml: 1 }}
+                    onClick={() => {
+                      setTarjetasPersonalizadas(tarjetasPersonalizadas.filter(t => t !== tarj));
+                    }}
+                  >
+                    <Delete fontSize="small" />
+                  </IconButton>
                 </Box>
               ))}
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-              Las tarjetas con borde azul son predeterminadas y no se pueden eliminar
+              Podés eliminar cualquier tarjeta, incluso las predeterminadas.
             </Typography>
           </Paper>
 
