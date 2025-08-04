@@ -594,90 +594,92 @@ function AppContent() {
               </Paper>
             </Box>
 
-            {/* Gráfico de evolución de gastos con tarjeta (próximos 6 meses) */}
-            <Paper sx={{ p: 3, bgcolor: '#fff', boxShadow: 4, borderRadius: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#222', fontWeight: 700, mb: 2 }}>
-                Evolución de gastos con tarjeta (próximos 6 meses)
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={(() => {
-                  const hoy = new Date();
-                  const datos = [];
-                  for (let i = 0; i < 6; i++) {
-                    const fecha = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
-                    const nombreMes = fecha.toLocaleString('es-AR', { month: 'short', year: 'numeric' });
-                    // Total de todas las tarjetas
-                    const gastosTarjeta = transacciones
-                      .filter(t => t.tipo === 'gasto' && t.tarjeta && new Date(t.fecha).getFullYear() === fecha.getFullYear() && new Date(t.fecha).getMonth() === fecha.getMonth())
-                      .reduce((sum, t) => sum + t.monto, 0);
-                    // Por cada tarjeta
-                    const porTarjeta: { [key: string]: number } = {};
-                    tarjetasPersonalizadas.forEach((tarj, idx) => {
-                      porTarjeta[tarj] = transacciones
-                        .filter(t => t.tipo === 'gasto' && t.tarjeta === tarj && new Date(t.fecha).getFullYear() === fecha.getFullYear() && new Date(t.fecha).getMonth() === fecha.getMonth())
+            {/* Gráficos de evolución de gastos con tarjeta y comparativa mensual, lado a lado */}
+            <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
+              {/* Gráfico de Barras Comparativo */}
+              <Paper sx={{ p: 3, bgcolor: '#fff', boxShadow: 4, borderRadius: 3, flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#222', fontWeight: 700, mb: 2 }}>
+                  Comparativa Mensual
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <RechartsBarChart data={ultimosSeisMeses}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey="mes" tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
+                    <YAxis tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
+                    <Tooltip 
+                      contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, fontWeight: 500, fontSize: 14, color: '#222' }}
+                      itemStyle={{ fontWeight: 500, fontSize: 14, color: '#222' }}
+                      formatter={(value, name) => [`$${value}`, name === 'gastos' ? 'Gastos' : 'Ingresos']}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 15, fontWeight: 500, color: '#222', paddingBottom: 8 }} iconSize={18} />
+                    <Bar dataKey="ingresos" fill="#00e676" name="Ingresos" barSize={24} radius={[8,8,0,0]} />
+                    <Bar dataKey="gastos" fill="#ff1744" name="Gastos" barSize={24} radius={[8,8,0,0]} />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </Paper>
+              {/* Gráfico de evolución de gastos con tarjeta (próximos 6 meses) */}
+              <Paper sx={{ p: 3, bgcolor: '#fff', boxShadow: 4, borderRadius: 3, flex: 1, minWidth: 0 }}>
+                <Typography variant="h6" gutterBottom sx={{ color: '#222', fontWeight: 700, mb: 2 }}>
+                  Evolución de gastos con tarjeta (próximos 6 meses)
+                </Typography>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={(() => {
+                    const hoy = new Date();
+                    const datos = [];
+                    for (let i = 0; i < 6; i++) {
+                      const fecha = new Date(hoy.getFullYear(), hoy.getMonth() + i, 1);
+                      const nombreMes = fecha.toLocaleString('es-AR', { month: 'short', year: 'numeric' });
+                      // Total de todas las tarjetas
+                      const gastosTarjeta = transacciones
+                        .filter(t => t.tipo === 'gasto' && t.tarjeta && new Date(t.fecha).getFullYear() === fecha.getFullYear() && new Date(t.fecha).getMonth() === fecha.getMonth())
                         .reduce((sum, t) => sum + t.monto, 0);
-                    });
-                    datos.push({ mes: nombreMes, gastosTarjeta, ...porTarjeta });
-                  }
-                  return datos;
-                })()}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="mes" tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
-                  <YAxis tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
-                  <Tooltip 
-                    contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, fontWeight: 500, fontSize: 14, color: '#222' }}
-                    itemStyle={{ fontWeight: 500, fontSize: 14, color: '#222' }}
-                    formatter={(value, name) => [`$${value}`, name === 'gastosTarjeta' ? 'Total tarjetas' : name]}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 15, fontWeight: 500, color: '#222', paddingBottom: 8 }} iconSize={18} />
-                  <Line 
-                    type="monotone" 
-                    dataKey="gastosTarjeta" 
-                    name="Total tarjetas" 
-                    stroke="#2979ff" 
-                    strokeWidth={3} 
-                    dot={{ r: 4.5, fill: '#fff', stroke: '#2979ff', strokeWidth: 1.5 }}
-                    activeDot={{ r: 7, fill: '#2979ff', stroke: '#fff', strokeWidth: 2 }}
-                    isAnimationActive={true}
-                  />
-                  {tarjetasPersonalizadas.map((tarj, idx) => (
-                    <Line
-                      key={tarj}
-                      type="monotone"
-                      dataKey={tarj}
-                      name={tarj}
-                      stroke={colores[idx % colores.length]}
-                      strokeWidth={2.5}
-                      dot={{ r: 4, fill: '#fff', stroke: colores[idx % colores.length], strokeWidth: 1.5 }}
-                      activeDot={{ r: 6, fill: colores[idx % colores.length], stroke: '#fff', strokeWidth: 2 }}
+                      // Por cada tarjeta
+                      const porTarjeta: { [key: string]: number } = {};
+                      tarjetasPersonalizadas.forEach((tarj) => {
+                        porTarjeta[tarj] = transacciones
+                          .filter(t => t.tipo === 'gasto' && t.tarjeta === tarj && new Date(t.fecha).getFullYear() === fecha.getFullYear() && new Date(t.fecha).getMonth() === fecha.getMonth())
+                          .reduce((sum, t) => sum + t.monto, 0);
+                      });
+                      datos.push({ mes: nombreMes, gastosTarjeta, ...porTarjeta });
+                    }
+                    return datos;
+                  })()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                    <XAxis dataKey="mes" tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
+                    <YAxis tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
+                    <Tooltip 
+                      contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, fontWeight: 500, fontSize: 14, color: '#222' }}
+                      itemStyle={{ fontWeight: 500, fontSize: 14, color: '#222' }}
+                      formatter={(value, name) => [`$${value}`, name === 'gastosTarjeta' ? 'Total tarjetas' : name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 15, fontWeight: 500, color: '#222', paddingBottom: 8 }} iconSize={18} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="gastosTarjeta" 
+                      name="Total tarjetas" 
+                      stroke="#2979ff" 
+                      strokeWidth={3} 
+                      dot={{ r: 4.5, fill: '#fff', stroke: '#2979ff', strokeWidth: 1.5 }}
+                      activeDot={{ r: 7, fill: '#2979ff', stroke: '#fff', strokeWidth: 2 }}
                       isAnimationActive={true}
                     />
-                  ))}
-                </LineChart>
-              </ResponsiveContainer>
-            </Paper>
-
-            {/* Gráfico de Barras Comparativo */}
-            <Paper sx={{ p: 3, bgcolor: '#fff', boxShadow: 4, borderRadius: 3 }}>
-              <Typography variant="h6" gutterBottom sx={{ color: '#222', fontWeight: 700, mb: 2 }}>
-                Comparativa Mensual
-              </Typography>
-              <ResponsiveContainer width="100%" height={300}>
-                <RechartsBarChart data={ultimosSeisMeses}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                  <XAxis dataKey="mes" tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
-                  <YAxis tick={{ fontWeight: 500, fontSize: 14, fill: '#222' }} />
-                  <Tooltip 
-                    contentStyle={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, fontWeight: 500, fontSize: 14, color: '#222' }}
-                    itemStyle={{ fontWeight: 500, fontSize: 14, color: '#222' }}
-                    formatter={(value, name) => [`$${value}`, name === 'gastos' ? 'Gastos' : 'Ingresos']}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 15, fontWeight: 500, color: '#222', paddingBottom: 8 }} iconSize={18} />
-                  <Bar dataKey="ingresos" fill="#00e676" name="Ingresos" barSize={24} radius={[8,8,0,0]} />
-                  <Bar dataKey="gastos" fill="#ff1744" name="Gastos" barSize={24} radius={[8,8,0,0]} />
-                </RechartsBarChart>
-              </ResponsiveContainer>
-            </Paper>
+                    {tarjetasPersonalizadas.map((tarj, idx) => (
+                      <Line
+                        key={tarj}
+                        type="monotone"
+                        dataKey={tarj}
+                        name={tarj}
+                        stroke={colores[idx % colores.length]}
+                        strokeWidth={2.5}
+                        dot={{ r: 4, fill: '#fff', stroke: colores[idx % colores.length], strokeWidth: 1.5 }}
+                        activeDot={{ r: 6, fill: colores[idx % colores.length], stroke: '#fff', strokeWidth: 2 }}
+                        isAnimationActive={true}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </Paper>
+            </Box>
           </Box>
 
           <Box display="flex" gap={2} mt={3}>
