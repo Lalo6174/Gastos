@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Card, CardContent, Chip, ListItemIcon, Dialog } from '@mui/material';
-import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, BarChart, SearchOutlined, CalendarMonth, AutoGraph, Settings } from '@mui/icons-material';
+import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, SearchOutlined, CalendarMonth, AutoGraph, Settings } from '@mui/icons-material';
 import CssBaseline from '@mui/material/CssBaseline';
 import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, parseISO, startOfWeek, endOfWeek } from 'date-fns';
@@ -222,11 +222,8 @@ function AppContent() {
 
   // Cálculos mejorados
   const gastosActuales = transacciones.filter(t => t.tipo === 'gasto' && !t.esFuturo).reduce((a, b) => a + b.monto, 0);
-  const gastosFuturos = transacciones.filter(t => t.tipo === 'gasto' && t.esFuturo).reduce((a, b) => a + b.monto, 0);
   const ingresosActuales = transacciones.filter(t => t.tipo === 'ingreso' && !t.esFuturo).reduce((a, b) => a + b.monto, 0);
-  const ingresosFuturos = transacciones.filter(t => t.tipo === 'ingreso' && t.esFuturo).reduce((a, b) => a + b.monto, 0);
   const balanceActual = ingresosActuales - gastosActuales;
-  const balanceFuturo = ingresosFuturos - gastosFuturos;
 
   // Función para filtrar y ordenar transacciones
   const filtrarYOrdenarTransacciones = (transaccionesArray: Transaccion[]) => {
@@ -361,11 +358,10 @@ function AppContent() {
 
   const menuItems = [
     { id: 0, label: 'Dashboard', icon: <Dashboard /> },
-    { id: 1, label: 'Gráficos', icon: <BarChart /> },
-    { id: 2, label: 'Movimientos', icon: <SearchOutlined /> },
-    { id: 3, label: 'Calendario', icon: <CalendarMonth /> },
-    { id: 4, label: 'Pendientes', icon: <AutoGraph /> },
-    { id: 5, label: 'Configuración', icon: <Settings /> },
+    { id: 1, label: 'Movimientos', icon: <SearchOutlined /> },
+    { id: 2, label: 'Calendario', icon: <CalendarMonth /> },
+    { id: 3, label: 'Pendientes', icon: <AutoGraph /> },
+    { id: 4, label: 'Configuración', icon: <Settings /> },
   ];
 
   return (
@@ -431,8 +427,8 @@ function AppContent() {
       <Box sx={{ flex: 1, ml: '280px' }}>
         <Container maxWidth="lg" sx={{ py: 4 }}>
 
-          {/* Dashboard Principal */}
-          {tab === 0 && (
+      {/* Dashboard Principal */}
+      {tab === 0 && (
         <>
           <Box display="flex" gap={2} mb={3} flexWrap="wrap">
             <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#e8f5e8', color: '#2e7d32' }}>
@@ -467,50 +463,7 @@ function AppContent() {
             </Card>
           </Box>
 
-          <Paper sx={{p:3, mb:3, bgcolor: '#fff', color: '#222'}}>
-            <Typography variant="h6" gutterBottom>Resumen Detallado</Typography>
-            <Box display="flex" gap={4} flexWrap="wrap">
-              <Box flex={1} minWidth={200}>
-                <Typography><strong>Ingresos actuales:</strong> ${ingresosActuales.toFixed(2)}</Typography>
-                <Typography><strong>Gastos actuales:</strong> ${gastosActuales.toFixed(2)}</Typography>
-                <Typography><strong>Balance actual:</strong> ${balanceActual.toFixed(2)}</Typography>
-              </Box>
-              <Box flex={1} minWidth={200}>
-                <Typography><strong>Ingresos futuros:</strong> ${ingresosFuturos.toFixed(2)}</Typography>
-                <Typography><strong>Gastos futuros:</strong> ${gastosFuturos.toFixed(2)}</Typography>
-                <Typography><strong>Balance futuro:</strong> ${balanceFuturo.toFixed(2)}</Typography>
-              </Box>
-            </Box>
-          </Paper>
-
-          <Box display="flex" gap={2}>
-            <Button 
-              variant="contained" 
-              color="success" 
-              startIcon={<Add />} 
-              onClick={() => abrirDialogoNuevo('ingreso')}
-            >
-              Agregar Ingreso
-            </Button>
-            <Button 
-              variant="contained" 
-              color="error" 
-              startIcon={<Add />} 
-              onClick={() => abrirDialogoNuevo('gasto')}
-            >
-              Agregar Gasto
-            </Button>
-          </Box>
-        </>
-      )}
-
-      {/* Tab de Gráficos */}
-      {tab === 1 && (
-        <Box>
-          <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
-            Análisis Gráfico
-          </Typography>
-          
+          {/* Gráficos en el dashboard */}
           <Box display="flex" flexDirection="column" gap={3}>
             {/* Gráfico de Gastos por Categoría */}
             <Box display="flex" flexDirection={{ xs: 'column', md: 'row' }} gap={3}>
@@ -536,7 +489,7 @@ function AppContent() {
                 </ResponsiveContainer>
               </Paper>
 
-            {/* Gráfico Temporal */}
+              {/* Gráfico Temporal */}
               <Paper sx={{ p: 3, flex: 1 }}>
                 <Typography variant="h6" gutterBottom>Tendencia Temporal (6 meses)</Typography>
                 <ResponsiveContainer width="100%" height={300}>
@@ -570,11 +523,31 @@ function AppContent() {
               </ResponsiveContainer>
             </Paper>
           </Box>
-        </Box>
+
+          <Box display="flex" gap={2} mt={3}>
+            <Button 
+              variant="contained" 
+              color="success" 
+              startIcon={<Add />} 
+              onClick={() => abrirDialogoNuevo('ingreso')}
+            >
+              Agregar Ingreso
+            </Button>
+            <Button 
+              variant="contained" 
+              color="error" 
+              startIcon={<Add />} 
+              onClick={() => abrirDialogoNuevo('gasto')}
+            >
+              Agregar Gasto
+            </Button>
+          </Box>
+        </>
       )}
 
+
       {/* Tab de Movimientos */}
-      {tab === 2 && (
+      {tab === 1 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
             Historial de Movimientos
@@ -910,7 +883,7 @@ function AppContent() {
       )}
 
       {/* Tab de Calendario */}
-      {tab === 3 && (
+      {tab === 2 && (
         <Box>
           <Typography variant="h5" gutterBottom align="center" sx={{ mb: 3 }}>
             Vista de Calendario
@@ -1021,7 +994,7 @@ function AppContent() {
       )}
 
       {/* Tab de Pendientes */}
-      {tab === 4 && (
+      {tab === 3 && (
         <Paper sx={{ p: 3, bgcolor: '#f4f8fb', color: '#222', minHeight: 400, borderRadius: 4, boxShadow: 6 }}>
           <Typography variant="h5" sx={{ fontWeight: 800, mb: 3, color: '#1565c0', letterSpacing: 1 }}>Pendientes y futuros</Typography>
           <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1178,7 +1151,7 @@ function AppContent() {
       )}
 
       {/* Tab de Configuración */}
-      {tab === 5 && (
+      {tab === 4 && (
         <Box>
           <Paper sx={{ p: 3, mb: 3, bgcolor: '#fff', color: '#222' }}>
             <Typography variant="h6" gutterBottom>Gestión de Categorías</Typography>
