@@ -431,6 +431,7 @@ function AppContent() {
       {tab === 0 && (
         <>
           <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+            {/* Tarjetas principales */}
             <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#e8f5e8', color: '#2e7d32' }}>
               <CardContent>
                 <Box display="flex" alignItems="center">
@@ -461,6 +462,76 @@ function AppContent() {
                 <Typography variant="caption">Actual</Typography>
               </CardContent>
             </Card>
+          </Box>
+
+          {/* Tarjetas de gastos de tarjeta */}
+          {/* Tarjetas de gastos de tarjeta - Mes actual */}
+          <Box mb={1} mt={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Gastos de tarjeta - Mes actual</Typography>
+          </Box>
+          <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+            {/* Total mes actual */}
+            <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#f3e5f5', color: '#6a1b9a' }}>
+              <CardContent>
+                <Typography variant="h6">Total tarjetas</Typography>
+                <Typography variant="h4">
+                  ${transacciones.filter(t => t.tipo === 'gasto' && t.tarjeta && new Date(t.fecha).getMonth() === new Date().getMonth() && new Date(t.fecha).getFullYear() === new Date().getFullYear()).reduce((a, b) => a + b.monto, 0).toFixed(2)}
+                </Typography>
+                <Typography variant="caption">Mes actual</Typography>
+              </CardContent>
+            </Card>
+            {/* Por cada tarjeta */}
+            {tarjetasPersonalizadas.map((tarj, idx) => {
+              const total = transacciones.filter(t => t.tipo === 'gasto' && t.tarjeta === tarj && new Date(t.fecha).getMonth() === new Date().getMonth() && new Date(t.fecha).getFullYear() === new Date().getFullYear()).reduce((a, b) => a + b.monto, 0);
+              if (total === 0) return null;
+              return (
+                <Card key={tarj} sx={{ flex: 1, minWidth: 200, bgcolor: '#ede7f6', color: '#4527a0' }}>
+                  <CardContent>
+                    <Typography variant="h6">{tarj}</Typography>
+                    <Typography variant="h4">${total.toFixed(2)}</Typography>
+                    <Typography variant="caption">Mes actual</Typography>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </Box>
+          {/* Tarjetas de gastos de tarjeta - Mes siguiente */}
+          <Box mb={1} mt={2}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>Gastos de tarjeta - Mes siguiente</Typography>
+          </Box>
+          <Box display="flex" gap={2} mb={3} flexWrap="wrap">
+            {/* Total mes siguiente */}
+            <Card sx={{ flex: 1, minWidth: 200, bgcolor: '#e1f5fe', color: '#0277bd' }}>
+              <CardContent>
+                <Typography variant="h6">Total tarjetas</Typography>
+                <Typography variant="h4">
+                  ${(() => {
+                    const now = new Date();
+                    const nextMonth = (now.getMonth() + 1) % 12;
+                    const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+                    return transacciones.filter(t => t.tipo === 'gasto' && t.tarjeta && new Date(t.fecha).getMonth() === nextMonth && new Date(t.fecha).getFullYear() === nextYear).reduce((a, b) => a + b.monto, 0).toFixed(2);
+                  })()}
+                </Typography>
+                <Typography variant="caption">Mes siguiente</Typography>
+              </CardContent>
+            </Card>
+            {/* Por cada tarjeta */}
+            {tarjetasPersonalizadas.map((tarj, idx) => {
+              const now = new Date();
+              const nextMonth = (now.getMonth() + 1) % 12;
+              const nextYear = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+              const total = transacciones.filter(t => t.tipo === 'gasto' && t.tarjeta === tarj && new Date(t.fecha).getMonth() === nextMonth && new Date(t.fecha).getFullYear() === nextYear).reduce((a, b) => a + b.monto, 0);
+              if (total === 0) return null;
+              return (
+                <Card key={tarj} sx={{ flex: 1, minWidth: 200, bgcolor: '#b3e5fc', color: '#01579b' }}>
+                  <CardContent>
+                    <Typography variant="h6">{tarj}</Typography>
+                    <Typography variant="h4">${total.toFixed(2)}</Typography>
+                    <Typography variant="caption">Mes siguiente</Typography>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </Box>
 
           {/* Gráficos en el dashboard */}
