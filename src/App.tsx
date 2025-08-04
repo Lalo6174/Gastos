@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import Snackbar from '@mui/material/Snackbar';
+import MuiAlert from '@mui/material/Alert';
+import type { AlertColor } from '@mui/material/Alert';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { Container, Typography, Box, Paper, Button, TextField, List, ListItem, ListItemText, IconButton, Card, CardContent, Chip, ListItemIcon, Dialog } from '@mui/material';
 import { Edit, Delete, Add, TrendingUp, TrendingDown, AccountBalanceWallet, Search, Dashboard, SearchOutlined, CalendarMonth, AutoGraph, Settings } from '@mui/icons-material';
@@ -27,6 +30,15 @@ const tarjetas = ['Visa', 'Mastercard', 'Amex'];
 const categoriasBase = ['Comida', 'Servicios', 'Ocio', 'Transporte', 'Salud', 'Salario', 'Freelance', 'Otros'];
 
 function AppContent() {
+  // Estado para Snackbar
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: AlertColor }>({ open: false, message: '', severity: 'success' });
+  const mostrarSnackbar = (message: string, severity: AlertColor = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+  const handleCloseSnackbar = (_event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') return;
+    setSnackbar({ ...snackbar, open: false });
+  };
   // ...existing code...
   const [filtroMesPendiente, setFiltroMesPendiente] = useState<string>('');
   const [transacciones, setTransacciones] = useState<Transaccion[]>([]);
@@ -126,7 +138,7 @@ function AppContent() {
 
   const handleAgregar = () => {
     if (!descripcion || !monto || !fecha) {
-      alert('Completa todos los campos obligatorios');
+      mostrarSnackbar('Completa todos los campos obligatorios', 'warning');
       return;
     }
     const cuotasValue = esFuturo && cuotas ? Number(cuotas) : undefined;
@@ -139,7 +151,7 @@ function AppContent() {
         cuotas: cuotasValue,
         mesInicio: mesInicioValue
       } : t));
-      alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} editado`);
+      mostrarSnackbar(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} editado`, 'success');
     } else {
       // Lógica de cuotas: si es pendiente y tiene cuotas y mesInicio, crear una transacción por cada cuota
       if (esFuturo && cuotasValue && mesInicioValue) {
@@ -168,7 +180,7 @@ function AppContent() {
           });
         }
         setTransacciones([...transacciones, ...transaccionesCuotas]);
-        alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} en cuotas agregado`);
+        mostrarSnackbar(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} en cuotas agregado`, 'success');
       } else {
         setTransacciones([...transacciones, {
           id: Date.now(), descripcion, monto: parseFloat(monto), fecha, tipo, esFuturo,
@@ -177,7 +189,7 @@ function AppContent() {
           cuotas: cuotasValue,
           mesInicio: mesInicioValue
         }]);
-        alert(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`);
+        mostrarSnackbar(`${tipo === 'gasto' ? 'Gasto' : 'Ingreso'} agregado`, 'success');
       }
     }
     limpiarFormulario();
@@ -205,7 +217,7 @@ function AppContent() {
 
   const handleEliminar = (id:number) => {
     setTransacciones(transacciones.filter(t => t.id !== id));
-    alert('Transacción eliminada');
+    mostrarSnackbar('Transacción eliminada', 'info');
   };
 
   const handleEditar = (t:Transaccion) => {
@@ -427,10 +439,10 @@ function AppContent() {
           >
             Nuevo Ingreso
           </Button>
-          <Button 
-            variant="contained" 
-            color="error" 
-            startIcon={<Add />} 
+          <Button
+            variant="contained"
+            color="error"
+            startIcon={<Add />}
             onClick={() => abrirDialogoNuevo('gasto')}
             sx={{ fontWeight: 700 }}
             fullWidth
@@ -1747,6 +1759,12 @@ function AppContent() {
           </Box>
         </Box>
       </Dialog>
+      {/* Snackbar de notificaciones */}
+      <Snackbar open={snackbar.open} autoHideDuration={3000} onClose={handleCloseSnackbar} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <MuiAlert onClose={(_e) => handleCloseSnackbar()} severity={snackbar.severity} sx={{ width: '100%' }} elevation={6} variant="filled">
+          {snackbar.message}
+        </MuiAlert>
+      </Snackbar>
       </Container>
       </Box>
     </Box>
