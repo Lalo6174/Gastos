@@ -415,10 +415,30 @@ function AppContent() {
           ))}
         </Box>
 
-        {/* Footer del sidebar */}
-        <Box sx={{ p: 2, borderTop: '1px solid #333', fontSize: '0.875rem', color: '#888' }}>
-          <Typography variant="caption">
-            � Los datos se guardan automáticamente
+        {/* Acciones principales en el sidebar */}
+        <Box sx={{ p: 2, borderTop: '1px solid #333', display: 'flex', flexDirection: 'column', gap: 1 }}>
+          <Button 
+            variant="contained" 
+            color="success" 
+            startIcon={<Add />} 
+            onClick={() => abrirDialogoNuevo('ingreso')}
+            sx={{ mb: 1, fontWeight: 700 }}
+            fullWidth
+          >
+            Nuevo Ingreso
+          </Button>
+          <Button 
+            variant="contained" 
+            color="error" 
+            startIcon={<Add />} 
+            onClick={() => abrirDialogoNuevo('gasto')}
+            sx={{ fontWeight: 700 }}
+            fullWidth
+          >
+            Nuevo Gasto
+          </Button>
+          <Typography variant="caption" color="#888" sx={{ mt: 2, textAlign: 'center' }}>
+            Los datos se guardan automáticamente
           </Typography>
         </Box>
       </Box>
@@ -682,24 +702,7 @@ function AppContent() {
             </Box>
           </Box>
 
-          <Box display="flex" gap={2} mt={3}>
-            <Button 
-              variant="contained" 
-              color="success" 
-              startIcon={<Add />} 
-              onClick={() => abrirDialogoNuevo('ingreso')}
-            >
-              Agregar Ingreso
-            </Button>
-            <Button 
-              variant="contained" 
-              color="error" 
-              startIcon={<Add />} 
-              onClick={() => abrirDialogoNuevo('gasto')}
-            >
-              Agregar Gasto
-            </Button>
-          </Box>
+          {/* ...el resto del dashboard... */}
         </>
       )}
 
@@ -953,26 +956,7 @@ function AppContent() {
               <Typography variant="h6">
                 Resultados ({filtrarYOrdenarTransacciones(transacciones).length} movimientos)
               </Typography>
-              <Box display="flex" gap={1}>
-                <Button 
-                  variant="contained" 
-                  color="success" 
-                  size="small"
-                  startIcon={<Add />} 
-                  onClick={() => abrirDialogoNuevo('ingreso')}
-                >
-                  Nuevo Ingreso
-                </Button>
-                <Button 
-                  variant="contained" 
-                  color="error" 
-                  size="small"
-                  startIcon={<Add />} 
-                  onClick={() => abrirDialogoNuevo('gasto')}
-                >
-                  Nuevo Gasto
-                </Button>
-              </Box>
+              {/* Botones de alta movidos al sidebar */}
             </Box>
             
             <List>
