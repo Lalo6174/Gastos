@@ -976,15 +976,78 @@ function AppContent() {
             </Box>
             
             <List>
-              {filtrarYOrdenarTransacciones(transacciones).length === 0 ? (
-                <ListItem>
-                  <ListItemText 
-                    primary="No se encontraron movimientos con los filtros aplicados." 
-                    secondary="Prueba ajustando los criterios de búsqueda."
-                  />
-                </ListItem>
-              ) : (
-                filtrarYOrdenarTransacciones(transacciones).map(t => (
+              {/* HISTÓRICO: solo mostrar movimientos cuya fecha sea <= hoy, incluyendo cuotas pendientes solo si corresponde */}
+              {(() => {
+                // Fecha de hoy (sin horas)
+                const hoy = new Date();
+                hoy.setHours(0,0,0,0);
+                // Expandir cuotas pendientes en transacciones individuales con su fecha real, evitando repeticiones
+                const transaccionesExpandido = transacciones.flatMap(t => {
+                  if (t.esFuturo && t.cuotas && t.mesInicio) {
+                    const [anio, mes] = t.mesInicio.split('-').map(Number);
+                    return Array.from({length: t.cuotas}, (_, i) => {
+                      let mesReal = mes + i;
+                      let anioReal = anio + Math.floor((mesReal - 1) / 12);
+                      mesReal = ((mesReal - 1) % 12) + 1;
+                      // Determinar el día: si t.fecha tiene día, usarlo; si no, día 1
+                      let dia = 1;
+                      if (t.fecha && /^\d{4}-\d{2}-\d{2}$/.test(t.fecha)) {
+                        dia = Number(t.fecha.slice(8,10));
+                      }
+                      // Si el día es mayor que el último día del mes, ajustarlo
+                      const ultimoDiaMes = new Date(anioReal, mesReal, 0).getDate();
+                      if (dia > ultimoDiaMes) dia = ultimoDiaMes;
+                      const fechaCuota = new Date(anioReal, mesReal - 1, dia);
+                      // id único: id original * 1e8 + año * 1e4 + mes * 1e2 + nro cuota
+                      const idCuota = t.id * 1e8 + anioReal * 1e4 + mesReal * 1e2 + (i+1);
+                      return {
+                        ...t,
+                        fecha: fechaCuota.toISOString().slice(0,10),
+                        descripcion: `${t.descripcion.replace(/\(cuota \d+\/\d+\)/gi, '').trim()} (cuota ${i+1}/${t.cuotas})`,
+                        cuotaNro: i+1,
+                        id: idCuota
+                      };
+                    });
+                  } else {
+                    // id único para movimientos normales: id original * 1e8 + fecha (yyyymmdd)
+                    let idNormal = t.id;
+                    if (t.fecha) {
+                      const fechaNum = Number(t.fecha.replace(/-/g, ''));
+                      idNormal = t.id * 1e8 + fechaNum;
+                    }
+                    return {
+                      ...t,
+                      id: idNormal
+                    };
+                  }
+                });
+                // Filtrar: solo mostrar movimientos cuya fecha sea <= hoy
+                const transaccionesHistorico = transaccionesExpandido.filter(t => {
+                  if (!t.fecha) return false;
+                  const fechaT = new Date(t.fecha);
+                  fechaT.setHours(0,0,0,0);
+                  return fechaT <= hoy;
+                });
+                // Eliminar duplicados exactos (por descripción, fecha, monto, tarjeta, cuotaNro)
+                const clavesVistas = new Set();
+                const transaccionesUnicas = transaccionesHistorico.filter(t => {
+                  const clave = `${t.descripcion}|${t.fecha}|${t.monto}|${t.tarjeta || ''}|${t.cuotaNro || ''}`;
+                  if (clavesVistas.has(clave)) return false;
+                  clavesVistas.add(clave);
+                  return true;
+                });
+                // Aplicar el resto de filtros y ordenamiento
+                const listaFinal = filtrarYOrdenarTransacciones(transaccionesUnicas);
+                if (listaFinal.length === 0) {
+                  return (
+                    <ListItem>
+                      <ListItemText 
+                        primary="No se encontraron movimientos con los filtros aplicados." 
+                        secondary="Prueba ajustando los criterios de búsqueda." />
+                    </ListItem>
+                  );
+                }
+                return listaFinal.map(t => (
                   <ListItem 
                     key={t.id} 
                     divider
@@ -1033,8 +1096,8 @@ function AppContent() {
                       </IconButton>
                     </Box>
                   </ListItem>
-                ))
-              )}
+                ));
+              })()}
             </List>
           </Paper>
         </Box>
