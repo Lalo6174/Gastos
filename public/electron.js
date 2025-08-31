@@ -14,10 +14,14 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      enableRemoteModule: false
+      enableRemoteModule: false,
+      webSecurity: false, // Permitir cargar archivos locales
+      allowRunningInsecureContent: true,
+      experimentalFeatures: true
     },
     icon: join(__dirname, 'favicon.ico'), // Opcional: ícono de la app
-    title: 'Gestión Financiera'
+    title: 'Gestión Financiera',
+    show: false // No mostrar hasta que esté listo
   });
 
   // Verificar si estamos en desarrollo
@@ -26,15 +30,40 @@ function createWindow() {
   
   // Cargar la app
   const startUrl = (isDev || isDevEnv)
-    ? 'http://localhost:5174' 
+    ? 'http://localhost:5173' 
     : `file://${join(__dirname, '../dist/index.html')}`;
   
-  mainWindow.loadURL(startUrl);
+  console.log('Cargando URL:', startUrl);
+  console.log('isDev:', isDev);
+  console.log('isDevEnv:', isDevEnv);
+  console.log('__dirname:', __dirname);
+  
+  mainWindow.loadURL(startUrl).catch(err => {
+    console.error('Error al cargar URL:', err);
+  });
 
-  // Abrir DevTools solo en desarrollo
-  if (isDev || isDevEnv) {
-    mainWindow.webContents.openDevTools();
-  }
+  // Mostrar la ventana cuando esté lista
+  mainWindow.once('ready-to-show', () => {
+    console.log('Ventana lista para mostrar');
+    mainWindow.show();
+  });
+
+  // Manejar errores de carga
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+    console.error('Error cargando la página:', errorCode, errorDescription);
+  });
+
+  // Agregar más eventos para debug
+  mainWindow.webContents.on('did-finish-load', () => {
+    console.log('Página cargada completamente');
+  });
+
+  mainWindow.webContents.on('dom-ready', () => {
+    console.log('DOM listo');
+  });
+
+  // Abrir DevTools siempre para debug
+  mainWindow.webContents.openDevTools();
 
   // Crear menú personalizado
   const template = [

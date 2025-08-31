@@ -215,9 +215,51 @@ function AppContent() {
     setDialogOpen(true);
   };
 
-  const handleEliminar = (id:number) => {
-    setTransacciones(transacciones.filter(t => t.id !== id));
-    mostrarSnackbar('Transacción eliminada', 'info');
+  const handleEliminar = (id: number) => {
+    // Buscar la transacción original para saber si es una cuota
+    const transaccionOriginal = transacciones.find(t => {
+      if (t.esFuturo && t.cuotas && t.mesInicio) {
+        const [anio, mes] = t.mesInicio.split('-').map(Number);
+        for (let i = 0; i < t.cuotas; i++) {
+          let mesReal = mes + i;
+          let anioReal = anio + Math.floor((mesReal - 1) / 12);
+          mesReal = ((mesReal - 1) % 12) + 1;
+          let dia = 1;
+          if (t.fecha && /^\d{4}-\d{2}-\d{2}$/.test(t.fecha)) {
+            dia = Number(t.fecha.slice(8,10));
+          }
+          const ultimoDiaMes = new Date(anioReal, mesReal, 0).getDate();
+          if (dia > ultimoDiaMes) dia = ultimoDiaMes;
+          const idCuota = t.id * 1e8 + anioReal * 1e4 + mesReal * 1e2 + (i+1);
+          if (idCuota === id) return true;
+        }
+      }
+      let idNormal = t.id;
+      if (t.fecha) {
+        const fechaNum = Number(t.fecha.replace(/-/g, ''));
+        idNormal = t.id * 1e8 + fechaNum;
+      }
+      return idNormal === id;
+    });
+
+    if (transaccionOriginal && transaccionOriginal.cuotas && transaccionOriginal.mesInicio) {
+      // Si es una cuota, eliminar la transacción original que generó todas las cuotas
+      if (confirm(`Esta es una transacción en cuotas. ¿Deseas eliminar todas las cuotas de "${transaccionOriginal.descripcion}"?`)) {
+        setTransacciones(transacciones.filter(t => t.id !== transaccionOriginal.id));
+        mostrarSnackbar('Transacción en cuotas eliminada', 'info');
+      }
+    } else {
+      // Si no es una cuota, eliminar solo esa transacción
+      setTransacciones(transacciones.filter(t => {
+        let idNormal = t.id;
+        if (t.fecha) {
+          const fechaNum = Number(t.fecha.replace(/-/g, ''));
+          idNormal = t.id * 1e8 + fechaNum;
+        }
+        return idNormal !== id;
+      }));
+      mostrarSnackbar('Transacción eliminada', 'info');
+    }
   };
 
   const handleEditar = (t:Transaccion) => {
