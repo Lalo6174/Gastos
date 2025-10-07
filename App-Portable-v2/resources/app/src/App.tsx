@@ -216,7 +216,11 @@ function AppContent() {
   };
 
   const handleEliminar = (id:number) => {
-    setTransacciones(transacciones.filter(t => t.id !== id));
+    setTransacciones(prev => {
+      const nuevas = prev.filter(t => t.id !== id);
+      localStorage.setItem('transacciones-gastos', JSON.stringify(nuevas));
+      return nuevas;
+    });
     mostrarSnackbar('Transacción eliminada', 'info');
   };
 
@@ -584,7 +588,7 @@ function AppContent() {
                       cx="50%"
                       cy="50%"
                       outerRadius={90}
-                      label={({ categoria, gastos }) => `${categoria}: $${gastos.toFixed(0)}`}
+                      label={({ categoria, gastos }) => `${categoria}: $${(gastos as number).toFixed(0)}`}
                       stroke="#fff"
                       strokeWidth={3}
                     >
@@ -1001,7 +1005,8 @@ function AppContent() {
                         fecha: fechaCuota.toISOString().slice(0,10),
                         descripcion: `${t.descripcion.replace(/\(cuota \d+\/\d+\)/gi, '').trim()} (cuota ${i+1}/${t.cuotas})`,
                         cuotaNro: i+1,
-                        id: idCuota
+                        id: idCuota,
+                        idOriginal: t.id
                       };
                     });
                   } else {
@@ -1013,7 +1018,8 @@ function AppContent() {
                     }
                     return {
                       ...t,
-                      id: idNormal
+                      id: idNormal,
+                      idOriginal: t.id
                     };
                   }
                 });
@@ -1087,7 +1093,7 @@ function AppContent() {
                       <IconButton onClick={() => handleEditar(t)} size="small">
                         <Edit />
                       </IconButton>
-                      <IconButton onClick={() => handleEliminar(t.id)} size="small">
+                      <IconButton onClick={() => handleEliminar((t as any).idOriginal || t.id)} size="small">
                         <Delete />
                       </IconButton>
                     </Box>

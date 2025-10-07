@@ -455,7 +455,7 @@ function AppContent() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ categoria, gastos }) => `${categoria}: $${gastos.toFixed(0)}`}
+                      label={({ categoria, gastos }) => `${categoria}: $${(gastos as number).toFixed(0)}`}
                     >
                       {gastosPorCategoria.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={colores[index % colores.length]} />

@@ -62,8 +62,7 @@ function createWindow() {
     console.log('DOM listo');
   });
 
-  // Abrir DevTools siempre para debug
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools(); // Desactivado para producción
 
   // Crear menú personalizado
   const template = [
