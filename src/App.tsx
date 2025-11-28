@@ -216,48 +216,31 @@ function AppContent() {
   };
 
   const handleEliminar = (id: number) => {
-    // Buscar la transacción original para saber si es una cuota
-    const transaccionOriginal = transacciones.find(t => {
-      if (t.esFuturo && t.cuotas && t.mesInicio) {
-        const [anio, mes] = t.mesInicio.split('-').map(Number);
-        for (let i = 0; i < t.cuotas; i++) {
-          let mesReal = mes + i;
-          let anioReal = anio + Math.floor((mesReal - 1) / 12);
-          mesReal = ((mesReal - 1) % 12) + 1;
-          let dia = 1;
-          if (t.fecha && /^\d{4}-\d{2}-\d{2}$/.test(t.fecha)) {
-            dia = Number(t.fecha.slice(8,10));
-          }
-          const ultimoDiaMes = new Date(anioReal, mesReal, 0).getDate();
-          if (dia > ultimoDiaMes) dia = ultimoDiaMes;
-          const idCuota = t.id * 1e8 + anioReal * 1e4 + mesReal * 1e2 + (i+1);
-          if (idCuota === id) return true;
+    const transaccion = transacciones.find(t => t.id === id);
+    if (!transaccion) {
+      console.error('Transacción no encontrada:', id);
+      mostrarSnackbar('Error: transacción no encontrada', 'error');
+      return;
+    }
+    if (transaccion.cuotas && transaccion.mesInicio) {
+      const descripcionBase = transaccion.descripcion.replace(/\s*\(cuota \d+\/\d+\)\s*/gi, '').trim();
+      const transaccionesGrupo = transacciones.filter(t => 
+        t.cuotas === transaccion.cuotas &&
+        t.mesInicio === transaccion.mesInicio &&
+        t.descripcion.replace(/\s*\(cuota \d+\/\d+\)\s*/gi, '').trim() === descripcionBase
+      );
+      if (transaccionesGrupo.length > 1) {
+        if (confirm(`Esta es una transacción en cuotas (${transaccionesGrupo.length} cuotas). ¿Deseas eliminar todas las cuotas de "${descripcionBase}"?`)) {
+          const idsAEliminar = transaccionesGrupo.map(t => t.id);
+          setTransacciones(transacciones.filter(t => !idsAEliminar.includes(t.id)));
+          mostrarSnackbar('Transacciones en cuotas eliminadas', 'info');
         }
-      }
-      let idNormal = t.id;
-      if (t.fecha) {
-        const fechaNum = Number(t.fecha.replace(/-/g, ''));
-        idNormal = t.id * 1e8 + fechaNum;
-      }
-      return idNormal === id;
-    });
-
-    if (transaccionOriginal && transaccionOriginal.cuotas && transaccionOriginal.mesInicio) {
-      // Si es una cuota, eliminar la transacción original que generó todas las cuotas
-      if (confirm(`Esta es una transacción en cuotas. ¿Deseas eliminar todas las cuotas de "${transaccionOriginal.descripcion}"?`)) {
-        setTransacciones(transacciones.filter(t => t.id !== transaccionOriginal.id));
-        mostrarSnackbar('Transacción en cuotas eliminada', 'info');
+      } else {
+        setTransacciones(transacciones.filter(t => t.id !== id));
+        mostrarSnackbar('Transacción eliminada', 'info');
       }
     } else {
-      // Si no es una cuota, eliminar solo esa transacción
-      setTransacciones(transacciones.filter(t => {
-        let idNormal = t.id;
-        if (t.fecha) {
-          const fechaNum = Number(t.fecha.replace(/-/g, ''));
-          idNormal = t.id * 1e8 + fechaNum;
-        }
-        return idNormal !== id;
-      }));
+      setTransacciones(transacciones.filter(t => t.id !== id));
       mostrarSnackbar('Transacción eliminada', 'info');
     }
   };
@@ -1019,48 +1002,8 @@ function AppContent() {
                 // Fecha de hoy (sin horas)
                 const hoy = new Date();
                 hoy.setHours(0,0,0,0);
-                // Expandir cuotas pendientes en transacciones individuales con su fecha real, evitando repeticiones
-                const transaccionesExpandido = transacciones.flatMap(t => {
-                  if (t.esFuturo && t.cuotas && t.mesInicio) {
-                    const [anio, mes] = t.mesInicio.split('-').map(Number);
-                    return Array.from({length: t.cuotas}, (_, i) => {
-                      let mesReal = mes + i;
-                      let anioReal = anio + Math.floor((mesReal - 1) / 12);
-                      mesReal = ((mesReal - 1) % 12) + 1;
-                      // Determinar el día: si t.fecha tiene día, usarlo; si no, día 1
-                      let dia = 1;
-                      if (t.fecha && /^\d{4}-\d{2}-\d{2}$/.test(t.fecha)) {
-                        dia = Number(t.fecha.slice(8,10));
-                      }
-                      // Si el día es mayor que el último día del mes, ajustarlo
-                      const ultimoDiaMes = new Date(anioReal, mesReal, 0).getDate();
-                      if (dia > ultimoDiaMes) dia = ultimoDiaMes;
-                      const fechaCuota = new Date(anioReal, mesReal - 1, dia);
-                      // id único: id original * 1e8 + año * 1e4 + mes * 1e2 + nro cuota
-                      const idCuota = t.id * 1e8 + anioReal * 1e4 + mesReal * 1e2 + (i+1);
-                      return {
-                        ...t,
-                        fecha: fechaCuota.toISOString().slice(0,10),
-                        descripcion: `${t.descripcion.replace(/\(cuota \d+\/\d+\)/gi, '').trim()} (cuota ${i+1}/${t.cuotas})`,
-                        cuotaNro: i+1,
-                        id: idCuota
-                      };
-                    });
-                  } else {
-                    // id único para movimientos normales: id original * 1e8 + fecha (yyyymmdd)
-                    let idNormal = t.id;
-                    if (t.fecha) {
-                      const fechaNum = Number(t.fecha.replace(/-/g, ''));
-                      idNormal = t.id * 1e8 + fechaNum;
-                    }
-                    return {
-                      ...t,
-                      id: idNormal
-                    };
-                  }
-                });
-                // Filtrar: solo mostrar movimientos cuya fecha sea <= hoy
-                const transaccionesHistorico = transaccionesExpandido.filter(t => {
+                // Filtrar transacciones históricas (fecha <= hoy) sin modificar IDs
+                const transaccionesHistorico = transacciones.filter(t => {
                   if (!t.fecha) return false;
                   const fechaT = new Date(t.fecha);
                   fechaT.setHours(0,0,0,0);
@@ -1290,7 +1233,7 @@ function AppContent() {
                       descripcion: descCuota,
                       fecha: `${mesStr}-${(t.fecha || '01').slice(8, 10)}`,
                       cuotaNro: i + 1,
-                      id: Number(`${t.id}${mesStr.replace('-', '')}${i + 1}`),
+
                       mesAgrupador: mesStr
                     });
                   }
